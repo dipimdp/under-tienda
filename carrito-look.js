@@ -1,6 +1,7 @@
 /* UNDER - Extras de la tienda (Empretienda), cargados desde el <head>:
    1) "Completá tu look" en el carrito lateral.
-   2) Bloque "Local en Mar del Plata" (al final del archivo).
+   2) Bloque "Local en Mar del Plata".
+   3) "Artículos similares" en la ficha de producto (al final del archivo).
 
    1) "Completá tu look" en el carrito lateral de Empretienda.
    Sugiere prendas que combinan con lo que hay en el carrito:
@@ -11,7 +12,7 @@
 (function () {
   var CATEGORIAS = { remeras: 'remera', camisas: 'camisa', abrigos: 'abrigo', pantalones: 'pantalon', bermudas: 'bermuda' };
   var GRUPOS = { arriba: ['remera', 'camisa'], abrigo: ['buzo', 'campera'], abajo: ['pantalon', 'bermuda'] };
-  var CACHE = 'und_look_v1';
+  var CACHE = 'und_look_v2';
 
   var css = [
     '.und-look{display:block!important;list-style:none;margin:18px 0 0;padding:16px 0 0;border-top:1px solid #eee}',
@@ -62,6 +63,15 @@
     return null;
   }
 
+  // Ruta completa de una categoría (ej. "remeras/henley") para armar el link del producto.
+  function ruta(idCat, link) {
+    var lista = window.categorias_flatten || [];
+    var c = lista.filter(function (x) { return x.idCategorias === idCat; })[0];
+    if (!c) return link;
+    var padre = c.c_padre && lista.filter(function (x) { return x.idCategorias === c.c_padre; })[0];
+    return padre ? padre.c_link + '/' + c.c_link : c.c_link;
+  }
+
   function traer(link, ids) {
     var q = 'filter_page=0&filter_order=0' + ids.map(function (id) { return '&filter_categories%5B%5D=' + id; }).join('');
     return fetch('/v4/product/category?' + q, { headers: { 'X-CSRF-TOKEN': window.csrf_token } })
@@ -80,7 +90,8 @@
           return {
             id: p.idProductos,
             nombre: p.p_nombre,
-            link: '/' + link + '/' + p.p_link,
+            link: '/' + ruta(p.Categorias_idCategorias, link) + '/' + p.p_link,
+            cat: link,
             img: p.imagenes && p.imagenes[0] ? (window.cdn || '') + p.imagenes[0].i_link : '',
             tipo: tipo(link, p.p_nombre),
             stock: stock
@@ -107,6 +118,9 @@
       });
     return pool;
   }
+  // Para que otras partes del archivo (Artículos similares) usen la misma lista de productos.
+  window.undProductos = productos;
+  window.undGrupoDe = grupoDe;
 
   function elegir(todos, enCarrito) {
     var porId = {};
@@ -291,6 +305,90 @@
     d.className = 'und-loc' + (home ? ' und-loc--home' : '');
     d.innerHTML = html(home);
     ancla.after(d);
+    return true;
+  }
+
+  var intentos = 40;
+  (function esperar() {
+    if (!poner() && --intentos) setTimeout(esperar, 250);
+  })();
+})();
+
+/* UNDER - "Artículos similares" en la ficha de producto (fila deslizable a todo el ancho, debajo del producto).
+   Orden: mismo tipo (ej. otras remeras), después misma categoría, después mismo grupo (arriba / abrigo / abajo).
+   Solo con stock y sin repetir el producto que se está viendo. Máximo 10. */
+(function () {
+  var css = [
+    '.und-sim{margin:40px 0 32px;font-family:"Work Sans",sans-serif}',
+    '.und-sim__h{display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin:0 0 14px}',
+    '.und-sim__t{margin:0!important;font-family:Montserrat,sans-serif!important;font-size:14px!important;font-weight:500!important;letter-spacing:.5px!important;text-transform:uppercase!important;color:#111!important}',
+    '.und-sim__n{display:flex;gap:6px}',
+    '.und-sim__n button{width:34px;height:34px;border:1px solid #ddd;border-radius:50%;background:#fff;color:#111;font-size:16px;line-height:1;cursor:pointer}',
+    '.und-sim__l{display:flex;gap:2px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none}',
+    '.und-sim__l::-webkit-scrollbar{display:none}',
+    '.und-sim__c{flex:0 0 calc((100% - 8px)/5);scroll-snap-align:start;color:#111;text-decoration:none!important}',
+    '.und-sim__c img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:#f2f2f2}',
+    '.und-sim__x{display:block;padding:10px 10px 0;font-size:11px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;line-height:1.3}',
+    '.und-sim__p{display:block;padding:3px 10px 0;font-size:11px;color:#666}',
+    '@media(max-width:959px){.und-sim__c{flex-basis:44%}.und-sim__n{display:none}}'
+  ].join('');
+
+  function precio(n) { return '$' + Math.round(n).toLocaleString('es-AR'); }
+
+  function elegir(todos, actual) {
+    var yo = todos.filter(function (p) { return p.id === actual; })[0];
+    if (!yo) return [];
+    var grupo = window.undGrupoDe ? window.undGrupoDe(yo.tipo) : null;
+    var otros = todos.filter(function (p) { return p.id !== actual; });
+    function mezclar(a) { return a.sort(function () { return Math.random() - .5; }); }
+    var out = [];
+    [
+      function (p) { return p.tipo === yo.tipo; },
+      function (p) { return p.cat === yo.cat; },
+      function (p) { return grupo && window.undGrupoDe(p.tipo) === grupo; }
+    ].forEach(function (f) {
+      mezclar(otros.filter(function (p) { return f(p) && out.indexOf(p) < 0; })).forEach(function (p) { if (out.length < 10) out.push(p); });
+    });
+    return out;
+  }
+
+  function poner() {
+    var seccion = document.querySelector('section.product-vip');
+    var input = document.querySelector('input[name="product"]');
+    if (!seccion || !input || typeof window.undProductos !== 'function') return false;
+    if (document.querySelector('.und-sim')) return true;
+    var actual = +input.value;
+    window.undProductos().then(function (todos) {
+      if (document.querySelector('.und-sim')) return;
+      var lista = elegir(todos, actual);
+      if (!lista.length) return;
+      if (!document.getElementById('und-sim-css')) {
+        var s = document.createElement('style');
+        s.id = 'und-sim-css';
+        s.textContent = css;
+        document.head.appendChild(s);
+      }
+      var d = document.createElement('div');
+      d.className = 'und-sim';
+      d.innerHTML = '<div class="und-sim__h"><h2 class="und-sim__t">Artículos similares</h2>' +
+        '<div class="und-sim__n"><button type="button" aria-label="Anterior">&#8249;</button><button type="button" aria-label="Siguiente">&#8250;</button></div></div>' +
+        '<div class="und-sim__l"></div>';
+      var l = d.querySelector('.und-sim__l');
+      lista.forEach(function (p) {
+        var hay = p.stock.filter(function (s) { return s.hay; });
+        var a = document.createElement('a');
+        a.className = 'und-sim__c';
+        a.href = p.link;
+        a.innerHTML = '<img loading="lazy" alt="" src="' + p.img + '"><span class="und-sim__x"></span><span class="und-sim__p">' +
+          precio(Math.min.apply(null, hay.map(function (s) { return s.precio; }))) + '</span>';
+        a.querySelector('.und-sim__x').textContent = p.nombre;
+        l.appendChild(a);
+      });
+      var b = d.querySelectorAll('.und-sim__n button');
+      b[0].onclick = function () { l.scrollBy({ left: -l.clientWidth * .8 }); };
+      b[1].onclick = function () { l.scrollBy({ left: l.clientWidth * .8 }); };
+      seccion.after(d);
+    });
     return true;
   }
 
