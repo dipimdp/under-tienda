@@ -1,4 +1,8 @@
-/* UNDER - "Completá tu look" en el carrito lateral de Empretienda.
+/* UNDER - Extras de la tienda (Empretienda), cargados desde el <head>:
+   1) "Completá tu look" en el carrito lateral.
+   2) Bloque "Local en Mar del Plata" (al final del archivo).
+
+   1) "Completá tu look" en el carrito lateral de Empretienda.
    Sugiere prendas que combinan con lo que hay en el carrito:
    - arriba (remeras, camisas)  -> 2 abrigos (buzo + campera) y 2 de abajo (pantalón + bermuda)
    - abrigo (buzos, camperas)   -> 2 de arriba (remera + camisa) y 2 de abajo
@@ -231,5 +235,66 @@
   var intentos = 40;
   (function esperar() {
     if (!iniciar() && --intentos) setTimeout(esperar, 250);
+  })();
+})();
+
+/* UNDER - Bloque "Local en Mar del Plata" (mapa, Cómo llegar, Consultar horario).
+   Va en la ficha de producto (debajo de las preguntas frecuentes) y en el inicio (debajo de los productos). */
+(function () {
+  var DIRECCION = 'Rawson 1550, Mar del Plata, Buenos Aires';
+  var WHATSAPP = '5492233040391';
+
+  var css = [
+    '.und-loc{margin:28px 0 8px;font-family:"Work Sans",sans-serif;color:#111}',
+    '.und-loc__k{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:11px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:#555}',
+    '.und-loc__k:before{content:"";width:22px;height:2px;background:#18834A}',
+    '.und-loc__h{margin:0 0 10px!important;font-family:Montserrat,sans-serif!important;font-size:20px!important;font-weight:600!important;line-height:1.15!important;letter-spacing:.3px!important;text-transform:uppercase!important;color:#111!important}',
+    '.und-loc__p{margin:0 0 18px;font-size:13px;line-height:1.55;color:#555}',
+    '.und-loc__c{border:1px solid #e5e5e5;border-radius:14px;overflow:hidden;background:#fff}',
+    '.und-loc__m{display:block;width:100%;height:200px;border:0}',
+    '.und-loc__b{padding:14px 16px 16px}',
+    '.und-loc__z{margin:0 0 4px;font-size:10px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:#18834A}',
+    '.und-loc__a{margin:0 0 14px;font-family:Montserrat,sans-serif;font-size:16px;font-weight:600;text-transform:uppercase;color:#111}',
+    '.und-loc__r{display:flex;gap:8px}',
+    '.und-loc__r a{flex:1 1 0;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:40px;padding:0 8px;border-radius:999px;font-size:10px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;text-decoration:none!important}',
+    '.und-loc--home .und-loc__r a{flex:0 0 auto;padding:0 18px}',
+    '.und-loc__1{background:#111;color:#fff!important}',
+    '.und-loc__2{border:1px solid #ddd;color:#111!important;background:#fff}',
+    '.und-loc--home{max-width:1100px;margin:40px auto 56px;padding:0 16px}',
+    '@media(min-width:960px){.und-loc--home{display:grid;grid-template-columns:1fr 1.2fr;gap:48px;align-items:center}.und-loc--home .und-loc__h{font-size:28px!important}.und-loc--home .und-loc__m{height:260px}}'
+  ].join('');
+
+  function html(home) {
+    var q = encodeURIComponent(DIRECCION);
+    return '<div class="und-loc__t"><p class="und-loc__k">Local en Mar del Plata</p>' +
+      '<h2 class="und-loc__h">Venís, te lo probás,<br>te lo llevás puesto</h2>' +
+      '<p class="und-loc__p">Estamos en Rawson 1550, a media cuadra del Paseo Aldrey. Si dudás entre dos talles, lo resolvés en dos minutos.</p></div>' +
+      '<div class="und-loc__c"><iframe class="und-loc__m" loading="lazy" title="Mapa del local UNDER" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=' + q + '&z=16&output=embed"></iframe>' +
+      '<div class="und-loc__b"><p class="und-loc__z">Mar del Plata</p><p class="und-loc__a">Rawson 1550</p>' +
+      '<div class="und-loc__r"><a class="und-loc__1" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=' + q + '">Cómo llegar &rarr;</a>' +
+      '<a class="und-loc__2" target="_blank" rel="noopener" href="https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent('¡Hola! Quería consultar el horario del local.') + '"><i class="fab fa-whatsapp"></i>Consultar horario</a></div></div></div>';
+  }
+
+  function poner() {
+    if (document.querySelector('.und-loc')) return true;
+    var home = location.pathname === '/' || location.pathname === '';
+    var ancla = home ? [].slice.call(document.querySelectorAll('section.block-products-feed')).pop() : document.querySelector('.under-faq');
+    if (!ancla) return false;
+    if (!document.getElementById('und-loc-css')) {
+      var s = document.createElement('style');
+      s.id = 'und-loc-css';
+      s.textContent = css;
+      document.head.appendChild(s);
+    }
+    var d = document.createElement('div');
+    d.className = 'und-loc' + (home ? ' und-loc--home' : '');
+    d.innerHTML = html(home);
+    ancla.after(d);
+    return true;
+  }
+
+  var intentos = 40;
+  (function esperar() {
+    if (!poner() && --intentos) setTimeout(esperar, 250);
   })();
 })();
