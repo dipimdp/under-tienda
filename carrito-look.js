@@ -319,7 +319,8 @@
    Solo con stock y sin repetir el producto que se está viendo. Máximo 10. */
 (function () {
   var css = [
-    '.und-sim{margin:40px 0 32px;font-family:"Work Sans",sans-serif}',
+    // Margen negativo: la ficha ya deja su propio espacio abajo; así el espacio queda en la mitad (55 px compu, 57 px celular).
+    '.und-sim{margin:-15px 0 32px;font-family:"Work Sans",sans-serif}',
     '.und-sim__h{display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin:0 0 14px}',
     '.und-sim__t{margin:0!important;font-family:Montserrat,sans-serif!important;font-size:14px!important;font-weight:500!important;letter-spacing:.5px!important;text-transform:uppercase!important;color:#111!important}',
     '.und-sim__n{display:flex;gap:6px}',
@@ -330,7 +331,7 @@
     '.und-sim__c img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;background:#f2f2f2}',
     '.und-sim__x{display:block;padding:10px 10px 0;font-size:11px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;line-height:1.3}',
     '.und-sim__p{display:block;padding:3px 10px 0;font-size:11px;color:#666}',
-    '@media(max-width:959px){.und-sim__c{flex-basis:44%}.und-sim__n{display:none}}'
+    '@media(max-width:959px){.und-sim{margin-top:-18px}.und-sim__c{flex-basis:44%}.und-sim__n{display:none}}'
   ].join('');
 
   function precio(n) { return '$' + Math.round(n).toLocaleString('es-AR'); }
