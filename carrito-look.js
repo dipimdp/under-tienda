@@ -241,7 +241,8 @@
 /* UNDER - Bloque "Local en Mar del Plata" (mapa, Cómo llegar, Consultar horario).
    Va en la ficha de producto (debajo de las preguntas frecuentes) y en el inicio (debajo de los productos). */
 (function () {
-  var DIRECCION = 'Rawson 1550, Mar del Plata, Buenos Aires';
+  // Se busca por el nombre del negocio en Google para que el mapa muestre "Under Indumentaria Streetwear" junto al pin.
+  var DIRECCION = 'Under Indumentaria Streetwear, Rawson 1550, Mar del Plata';
   var WHATSAPP = '5492233040391';
 
   var css = [
