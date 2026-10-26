@@ -399,6 +399,150 @@
   })();
 })();
 
+/* UNDER - Colores en la ficha de producto: cada color es un producto aparte (mismo nombre, cambia la última palabra).
+   Muestra los colores arriba del talle; al elegir otro aparece una tarjeta con su foto, talles con stock y
+   "Agregar al carrito", sin salir de la página. */
+(function () {
+  var COLORES = {
+    natural: '#e8e1d2', beige: '#cdb99a', gris: '#8e9296', negro: '#111111', negra: '#111111', blanco: '#ffffff', blanca: '#ffffff',
+    marron: '#6b4a34', verde: '#3f5a43', azul: '#27406b', celeste: '#9cc3e0', bordo: '#6d1f2b', rojo: '#b3262b', topo: '#8b7d72',
+    sage: '#9caf94', crema: '#f1e8d2', camel: '#b88a55', arena: '#d8c7a3', oliva: '#6b6b3a', rosa: '#e6b4bd', naranja: '#d9732b',
+    amarillo: '#e4c33c', celestes: '#9cc3e0', khaki: '#a89c6e', chocolate: '#4a2f22'
+  };
+  var css = [
+    '.und-col{margin:0 0 18px;font-family:"Work Sans",sans-serif}',
+    '.und-col__l{margin:0 0 8px;font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:#111}',
+    '.und-col__l span{font-weight:400;color:#666;text-transform:none;letter-spacing:.2px;margin-left:4px}',
+    '.und-col__s{display:flex;flex-wrap:wrap;gap:10px}',
+    '.und-col__s button{width:30px;height:30px;padding:0;border:1px solid #d6d6d6;border-radius:50%;cursor:pointer;background-size:cover;background-position:center;box-shadow:inset 0 0 0 3px #fff}',
+    '.und-col__s button.on{outline:1px solid #111;outline-offset:2px}',
+    '.und-col__p{display:flex;gap:14px;margin-top:14px;padding:14px;border:1px solid #e5e5e5;border-radius:12px;background:#fff}',
+    '.und-col__p img{width:72px;height:96px;object-fit:cover;background:#f2f2f2;flex:0 0 72px}',
+    '.und-col__d{flex:1;min-width:0}',
+    '.und-col__n{display:block;font-size:12px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;color:#111;text-decoration:none}',
+    '.und-col__pr{display:block;margin:3px 0 10px;font-size:12px;color:#666}',
+    '.und-col__t{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}',
+    '.und-col__t button{min-width:36px;height:32px;padding:0 8px;border:1px solid #d6d6d6;border-radius:2px;background:#fff;font:400 12px "Work Sans",sans-serif;color:#111;cursor:pointer}',
+    '.und-col__t button.on{border-color:#111;box-shadow:inset 0 0 0 1px #111}',
+    '.und-col__t button:disabled{opacity:.35;text-decoration:line-through;cursor:default}',
+    '.und-col__a{height:40px;padding:0 18px;border:0;border-radius:6px;background:#18834A;color:#fff;font:600 11px "Work Sans",sans-serif;letter-spacing:1px;text-transform:uppercase;cursor:pointer}',
+    '.und-col__a:disabled{opacity:.5;cursor:default}',
+    '.und-col__m{margin-top:8px;font-size:11px;color:#c0392b}'
+  ].join('');
+
+  function norm(s) { return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  function base(n) { return norm(n).replace(/\s+\S+$/, ''); }
+  function color(n) { return String(n).trim().split(/\s+/).pop(); }
+  function precio(n) { return '$' + Math.round(n).toLocaleString('es-AR'); }
+
+  function agregar(p, s, btn, msg) {
+    btn.disabled = true;
+    var x = new XMLHttpRequest();
+    x.open('POST', '/v4/cart/add');
+    x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
+    x.setRequestHeader('X-CSRF-TOKEN', window.csrf_token);
+    x.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    x.onload = function () {
+      var r = {};
+      try { r = JSON.parse(x.responseText); } catch (e) {}
+      btn.disabled = false;
+      if (x.status === 200 && r.data && typeof window.build_cart === 'function') {
+        msg.textContent = '';
+        window.build_cart(r.data, false, []);
+        try { UIkit.offcanvas('#cart-sidenav').show(); } catch (e) {}
+      } else {
+        msg.textContent = (r.message && r.message.description) || 'No se pudo agregar. Probá de nuevo.';
+      }
+    };
+    x.onerror = function () { btn.disabled = false; msg.textContent = 'No se pudo agregar. Probá de nuevo.'; };
+    x.send('product=' + p.id + '&stock=' + s.id + '&atributos-0=' + encodeURIComponent(s.talle) + '&quantity=1');
+  }
+
+  function tarjeta(p) {
+    var d = document.createElement('div');
+    d.className = 'und-col__p';
+    var hay = p.stock.filter(function (s) { return s.hay; });
+    d.innerHTML = '<a href="' + p.link + '"><img alt="" src="' + p.img + '"></a><div class="und-col__d">' +
+      '<a class="und-col__n" href="' + p.link + '"></a><span class="und-col__pr"></span><div class="und-col__t"></div>' +
+      '<button type="button" class="und-col__a" disabled>Agregar al carrito</button><div class="und-col__m"></div></div>';
+    d.querySelector('.und-col__n').textContent = p.nombre;
+    d.querySelector('.und-col__pr').textContent = hay.length ? precio(Math.min.apply(null, hay.map(function (s) { return s.precio; }))) : 'Sin stock';
+    var sel = null;
+    var btn = d.querySelector('.und-col__a');
+    var msg = d.querySelector('.und-col__m');
+    var tl = d.querySelector('.und-col__t');
+    p.stock.forEach(function (s) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = s.talle;
+      b.disabled = !s.hay;
+      b.onclick = function () {
+        [].forEach.call(tl.children, function (o) { o.classList.remove('on'); });
+        b.classList.add('on');
+        sel = s;
+        btn.disabled = false;
+        msg.textContent = '';
+      };
+      tl.appendChild(b);
+    });
+    btn.onclick = function () { if (sel) agregar(p, sel, btn, msg); };
+    return d;
+  }
+
+  function poner() {
+    var form = document.querySelector('section.product-vip form');
+    var input = document.querySelector('input[name="product"]');
+    var campo = form && form.querySelector('.field--atributos-0');
+    if (!form || !input || !campo || typeof window.undProductos !== 'function') return false;
+    if (document.querySelector('.und-col')) return true;
+    var actual = +input.value;
+    window.undProductos().then(function (todos) {
+      if (document.querySelector('.und-col')) return;
+      var yo = todos.filter(function (p) { return p.id === actual; })[0];
+      if (!yo) return;
+      var lista = todos.filter(function (p) { return p.cat === yo.cat && base(p.nombre) === base(yo.nombre); });
+      if (lista.length < 2) return;
+      if (!document.getElementById('und-col-css')) {
+        var st = document.createElement('style');
+        st.id = 'und-col-css';
+        st.textContent = css;
+        document.head.appendChild(st);
+      }
+      var w = document.createElement('div');
+      w.className = 'und-col';
+      w.innerHTML = '<p class="und-col__l">Color<span></span></p><div class="und-col__s"></div><div class="und-col__slot"></div>';
+      var etiqueta = w.querySelector('.und-col__l span');
+      var fila = w.querySelector('.und-col__s');
+      var slot = w.querySelector('.und-col__slot');
+      etiqueta.textContent = color(yo.nombre);
+      lista.forEach(function (p) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.title = color(p.nombre);
+        b.setAttribute('aria-label', color(p.nombre));
+        var hex = COLORES[norm(color(p.nombre))];
+        if (hex) b.style.backgroundColor = hex; else b.style.backgroundImage = 'url(' + p.img + ')';
+        if (p.id === actual) b.classList.add('on');
+        b.onclick = function () {
+          [].forEach.call(fila.children, function (o) { o.classList.remove('on'); });
+          b.classList.add('on');
+          slot.innerHTML = '';
+          etiqueta.textContent = color(p.nombre);
+          if (p.id !== actual) slot.appendChild(tarjeta(p));
+        };
+        fila.appendChild(b);
+      });
+      campo.closest('.uk-grid-small').before(w);
+    });
+    return true;
+  }
+
+  var intentos = 40;
+  (function esperar() {
+    if (!poner() && --intentos) setTimeout(esperar, 250);
+  })();
+})();
+
 /* UNDER - Carrito vacío: el botón "Volver a la tienda" lleva al inicio (por defecto solo cerraba el panel). */
 (function () {
   document.addEventListener('click', function (e) {
