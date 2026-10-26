@@ -19,7 +19,7 @@
     '.und-look__t{margin:0 0 10px;font:500 12px "Work Sans",sans-serif;letter-spacing:.8px;text-transform:uppercase;color:#111}',
     '.und-look__i{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0f0f0}',
     '.und-look__i:last-child{border-bottom:0}',
-    '.und-look__i img{width:56px;height:72px;object-fit:cover;background:#f2f2f2;flex:0 0 56px}',
+    '.und-look__i img{width:84px;height:108px;object-fit:cover;background:#f2f2f2;flex:0 0 84px}',
     '.und-look__d{flex:1;min-width:0}',
     '.und-look__n{display:block;font:500 11px "Work Sans",sans-serif;letter-spacing:.3px;text-transform:uppercase;color:#111;text-decoration:none;line-height:1.3}',
     '.und-look__p{display:block;margin-top:3px;font:400 11px "Work Sans",sans-serif;color:#666}',
