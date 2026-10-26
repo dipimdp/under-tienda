@@ -613,7 +613,10 @@
       var min = Math.min.apply(null, hay.map(function (s) { return s.precio; }));
       if (precio) precio.textContent = fmt(min);
       if (cuotas && nCuotas) cuotas.textContent = nCuotas + ' cuotas sin interés de ' + fmt(min / nCuotas);
-      if (transf && razon) transf.textContent = fmt(min * razon) + ' con transferencia';
+      if (transf && razon) {
+        var fuerte = transf.querySelector('strong');
+        if (fuerte) fuerte.textContent = fmt(min * razon); else transf.textContent = fmt(min * razon) + ' con transferencia';
+      }
     }
 
     var fila = document.createElement('div');
