@@ -865,3 +865,67 @@
     if (e && !e.querySelector('.und-tot')) aumentar(e);
   }).observe(document.documentElement, { childList: true, subtree: true });
 })();
+
+/* UNDER - Carrito lateral: "Iniciá el pago con:" con dos tarjetas (tarjeta / transferencia en verde, con el ahorro).
+   Las dos funcionan como el botón "Iniciar compra" original, que queda oculto. La línea "O $X con Transferencia" se oculta
+   porque la tarjeta de transferencia ya la dice. */
+(function () {
+  var st = document.createElement('style');
+  st.textContent =
+    '.cart-sidenav__item.und-trf{display:none!important}' +
+    '.und-pay ~ .cart-sidenav__item--button-area .und-ini{display:none!important}' +
+    '.cart-sidenav__item.und-pay{display:block!important;list-style:none;padding:6px 0 0!important}' +
+    '.und-pay__h{margin:0 0 8px;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#555}' +
+    '.und-pc{display:block;box-sizing:border-box;margin:0 0 10px;padding:14px 16px;border:1.5px solid #111;border-radius:14px;background:#fff!important;color:#111!important;cursor:pointer;transition:transform .15s,box-shadow .15s}' +
+    '.und-pc:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.15)}' +
+    '.und-pc__r{display:flex;justify-content:space-between;align-items:center;gap:10px}' +
+    '.und-pc__t{display:block;font-size:15px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}' +
+    '.und-pc__p{font-size:24px;font-weight:700;line-height:1.1;text-align:right}' +
+    '.und-pc__p s{display:block;font-size:12px;font-weight:500;opacity:.7}' +
+    '.und-pc__s{display:block;margin-top:2px;font-size:12px;opacity:.8}' +
+    '.und-pc__s b{opacity:1}' +
+    '.und-pc__g{display:flex;justify-content:space-between;margin-top:12px;padding-top:11px;border-top:1px solid rgba(128,128,128,.35);font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}' +
+    '.und-pc--t{border-color:#2e6044;background:#2e6044!important;color:#fff!important}' +
+    '.und-pc--t .und-pc__g{border-top-color:rgba(255,255,255,.35)}' +
+    '.und-pc__b{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:5px;background:rgba(255,255,255,.22);font-size:11px;font-weight:700;letter-spacing:0;vertical-align:middle}';
+  document.head.appendChild(st);
+
+  function num(s) { return +(s || '').replace(/[^\d,]/g, '').replace(',', '.') || 0; }
+  function money(n) { return '$' + Math.round(n).toLocaleString('es-AR'); }
+
+  function armar() {
+    var ul = document.querySelector('.cart-sidenav__content');
+    if (!ul || ul.querySelector('.und-pay')) return;
+    var precios = ul.querySelectorAll('.cart-sidenav__detail-price');
+    var btn = [].filter.call(ul.querySelectorAll('.cart-sidenav__item--button-area button'), function (b) { return /iniciar compra/i.test(b.textContent); })[0];
+    if (!precios.length || !btn) return;
+    btn.classList.add('und-ini');
+    var sub = num(precios[0].textContent);
+    var total = num(precios[precios.length - 1].textContent);
+    var k = +window.transfer_discount || 0;
+    var ahorro = sub * k / 100;
+    var cuota = total / 3;
+
+    var li = document.createElement('li');
+    li.className = 'cart-sidenav__item und-pay';
+    var html = '<p class="und-pay__h">Iniciá el pago con:</p>' +
+      '<div class="und-pc" data-k="t"><div class="und-pc__r"><div><span class="und-pc__t">Pago con tarjeta</span>' +
+      '<span class="und-pc__s">3 cuotas sin interés de <b>' + money(cuota) + '</b></span></div>' +
+      '<div class="und-pc__p">' + money(total) + '</div></div>' +
+      '<div class="und-pc__g"><span>Iniciar compra</span><span>→</span></div></div>';
+    if (k) {
+      html += '<div class="und-pc und-pc--t" data-k="x"><div class="und-pc__r"><div><span class="und-pc__t">Transferencia<span class="und-pc__b">-' + k + '%</span></span>' +
+        '<span class="und-pc__s">Ahorrás <b>' + money(ahorro) + '</b> · elegila en «Pago»</span></div>' +
+        '<div class="und-pc__p"><s>' + money(total) + '</s>' + money(total - ahorro) + '</div></div>' +
+        '<div class="und-pc__g"><span>Iniciar compra</span><span>→</span></div></div>';
+    }
+    li.innerHTML = html;
+    [].forEach.call(li.querySelectorAll('.und-pc'), function (c) {
+      c.onclick = function () { btn.click(); };
+    });
+    btn.closest('li').before(li);
+  }
+
+  new MutationObserver(armar).observe(document.documentElement, { childList: true, subtree: true });
+  armar();
+})();
