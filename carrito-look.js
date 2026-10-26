@@ -108,12 +108,21 @@
       if (c && Date.now() - c.t < 30 * 60 * 1000) return (pool = Promise.resolve(c.p));
     } catch (e) {}
     var cats = categorias();
+    if (!Object.keys(cats).length) {
+      // Páginas sin el listado de categorías (checkout): usar la última lista guardada, aunque sea vieja.
+      try {
+        var v = JSON.parse(localStorage.getItem(CACHE + '_ls') || 'null');
+        if (v && v.p) return Promise.resolve(v.p);
+      } catch (e) {}
+      return Promise.resolve([]);
+    }
     pool = Promise.all(Object.keys(cats).map(function (l) { return traer(l, cats[l]).catch(function () { return []; }); }))
       .then(function (listas) {
         var todos = [].concat.apply([], listas).filter(function (p) {
           return p.stock.some(function (s) { return s.hay; });
         });
         try { sessionStorage.setItem(CACHE, JSON.stringify({ t: Date.now(), p: todos })); } catch (e) {}
+        try { localStorage.setItem(CACHE + '_ls', JSON.stringify({ t: Date.now(), p: todos })); } catch (e) {}
         return todos;
       });
     return pool;
@@ -121,6 +130,19 @@
   // Para que otras partes del archivo (Artículos similares) usen la misma lista de productos.
   window.undProductos = productos;
   window.undGrupoDe = grupoDe;
+  // Bloque "Completá tu look" listo para poner en otras páginas (checkout). Devuelve una promesa con el elemento o null.
+  window.undLookPanel = function (ids) {
+    addStyle();
+    return productos().then(function (todos) {
+      var sug = elegir(todos, ids);
+      if (!sug.length) return null;
+      var d = document.createElement('div');
+      d.className = 'und-look';
+      d.innerHTML = '<p class="und-look__t">Completá tu look</p>';
+      sug.forEach(function (p) { d.appendChild(fila(p)); });
+      return d;
+    });
+  };
 
   function elegir(todos, enCarrito) {
     var porId = {};
@@ -162,8 +184,9 @@
     x.onload = function () {
       var r = {};
       try { r = JSON.parse(x.responseText); } catch (e) {}
-      if (x.status === 200 && r.data && typeof window.build_cart === 'function') {
-        window.build_cart(r.data, false, []);
+      if (x.status === 200 && r.data && (typeof window.build_cart === 'function' || typeof window.undAlAgregar === 'function')) {
+        if (typeof window.build_cart === 'function') window.build_cart(r.data, false, []);
+        else window.undAlAgregar(r.data);
       } else {
         var e = fila.querySelector('.und-look__e') || document.createElement('div');
         e.className = 'und-look__e';
@@ -720,6 +743,56 @@
       correr();
       new MutationObserver(programar).observe(document.body, { childList: true, subtree: true });
     } else if (--intentos) setTimeout(esperar, 250);
+  })();
+})();
+
+/* UNDER - Checkout: "Completá tu look" debajo de "Mi compra". El checkout no tiene el carrito lateral, así que
+   los productos del carrito se piden a /v4/cart y, al añadir una prenda, se recarga la página para que el resumen se actualice. */
+(function () {
+  var css = [
+    '.und-look--co{display:block!important;margin:16px 0 0!important;padding:20px 22px!important;border:1px solid #e6e6e6!important;border-radius:10px;background:#fff;list-style:none}',
+    '.und-look--co .und-look__t{margin:0 0 6px;font:600 14px Montserrat,sans-serif;letter-spacing:.2px;text-transform:none;color:#111}',
+    '.und-look--co .und-look__i{gap:14px;padding:14px 0;border-bottom:1px solid #f0f0f0}',
+    '.und-look--co .und-look__i img{width:64px;height:84px;flex:0 0 64px;border-radius:6px}',
+    '.und-look--co .und-look__n{font:500 12px "Work Sans",sans-serif;letter-spacing:.3px}',
+    '.und-look--co .und-look__p{margin-top:4px;font-size:12px}',
+    '.und-look--co .und-look__b{height:34px;padding:0 16px;border-radius:999px;font-size:10px}',
+    '.und-look--co .und-look__s button{border-radius:999px;min-width:38px}'
+  ].join('');
+
+  function poner() {
+    var cont = [].filter.call(document.querySelectorAll('.checkout__detail-container'), function (e) { return e.offsetParent; })[0];
+    if (!cont || typeof window.undLookPanel !== 'function') return false;
+    if (document.querySelector('.und-look--co') || cont.__undCo) return true;
+    cont.__undCo = true;
+    fetch('/v4/cart', { headers: { 'X-CSRF-TOKEN': window.csrf_token, 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var prods = (j.data && j.data.productos) || {};
+        var ids = Object.keys(prods).map(function (k) { return prods[k].id; });
+        if (!ids.length) return null;
+        window.undAlAgregar = function () { location.reload(); };
+        return window.undLookPanel(ids);
+      })
+      .then(function (el) {
+        if (!el) return;
+        if (!document.getElementById('und-co-css')) {
+          var s = document.createElement('style');
+          s.id = 'und-co-css';
+          s.textContent = css;
+          document.head.appendChild(s);
+        }
+        el.classList.add('und-look--co');
+        cont.after(el);
+      })
+      .catch(function () {});
+    return true;
+  }
+
+  var intentos = 60;
+  (function esperar() {
+    if (!/^\/checkout/.test(location.pathname)) return;
+    if (!poner() && --intentos) setTimeout(esperar, 250);
   })();
 })();
 
