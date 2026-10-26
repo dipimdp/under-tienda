@@ -626,12 +626,17 @@
       var hex = (window.undColores || {})[nrm(col(p.nombre))];
       if (hex) b.style.backgroundColor = hex; else b.style.backgroundImage = 'url(' + p.img + ')';
       if (p.id === yo.id) b.classList.add('on');
-      b.onclick = function (e) {
-        e.preventDefault();
-        e.stopPropagation();
+      function elegir() {
+        if (b.classList.contains('on')) return;
         [].forEach.call(fila.children, function (x) { x.classList.remove('on'); });
         b.classList.add('on');
         poner(p);
+      }
+      b.onmouseenter = elegir;
+      b.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        location.assign(p.link);
       };
       fila.appendChild(b);
     });
