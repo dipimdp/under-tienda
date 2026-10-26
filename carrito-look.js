@@ -426,7 +426,14 @@
     '.und-col__t button:disabled{opacity:.35;text-decoration:line-through;cursor:default}',
     '.und-col__a{height:40px;padding:0 18px;border:0;border-radius:6px;background:#18834A;color:#fff;font:600 11px "Work Sans",sans-serif;letter-spacing:1px;text-transform:uppercase;cursor:pointer}',
     '.und-col__a:disabled{opacity:.5;cursor:default}',
-    '.und-col__m{margin-top:8px;font-size:11px;color:#c0392b}'
+    '.und-col__m{margin-top:8px;font-size:11px;color:#c0392b}',
+    // Celular: fila de colores dentro de la barra fija de abajo (la arma el script de Etiquetas HTML).
+    '@media(max-width:959px){.und-bar .und-bc{justify-content:flex-start;align-items:center;gap:12px}',
+    '.und-bar .und-bc a{position:relative;display:block;width:20px;height:20px;border:1px solid rgba(0,0,0,.12);background-size:cover;background-position:center}',
+    '.und-bar .und-bc a.on::after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:1px;background:#111}',
+    '.und-bar .und-bc span{margin-right:4px;font-size:13px;font-weight:500;color:#111;text-transform:none;letter-spacing:0}',
+    'body:has(.und-bar.on .und-bc) .chat{transform:translateY(-124px)}',
+    'body:has(.und-bar.pick .und-bc) .chat{transform:translateY(-212px)}}'
   ].join('');
 
   window.undColores = COLORES;
@@ -533,6 +540,31 @@
         fila.appendChild(b);
       });
       campo.closest('.uk-grid-small').before(w);
+
+      function enBarra() {
+        var b = document.querySelector('.und-bar');
+        if (!b || b.querySelector('.und-bc')) return;
+        var btn = [].filter.call(b.children, function (e) { return e.tagName === 'BUTTON'; })[0];
+        if (!btn) return;
+        var r = document.createElement('div');
+        r.className = 'und-bc';
+        var n = document.createElement('span');
+        n.textContent = color(yo.nombre);
+        r.appendChild(n);
+        lista.forEach(function (p) {
+          var a = document.createElement('a');
+          a.href = p.link;
+          a.title = color(p.nombre);
+          a.setAttribute('aria-label', color(p.nombre));
+          var hex = COLORES[norm(color(p.nombre))];
+          if (hex) a.style.backgroundColor = hex; else a.style.backgroundImage = 'url(' + p.img + ')';
+          if (p.id === actual) a.className = 'on';
+          r.appendChild(a);
+        });
+        btn.before(r);
+      }
+      enBarra();
+      new MutationObserver(enBarra).observe(document.body, { childList: true, subtree: true });
     });
     return true;
   }
