@@ -750,40 +750,45 @@
    los productos del carrito se piden a /v4/cart y, al añadir una prenda, se recarga la página para que el resumen se actualice. */
 (function () {
   var css = [
-    '.und-look--co{box-sizing:border-box;width:auto;display:block!important;margin:16px 24px 0 0!important;padding:20px 22px!important;border:1px solid #e6e6e6!important;border-radius:10px;background:#fff;list-style:none}',
+    '.und-look--co{box-sizing:border-box;width:auto;display:block!important;margin-top:16px!important;padding:20px 22px!important;border:1px solid #e6e6e6!important;border-radius:10px;background:#fff;list-style:none}',
     '.und-look--co .und-look__t{margin:0 0 6px;font:600 14px Montserrat,sans-serif;letter-spacing:.2px;text-transform:none;color:#111}',
     '.und-look--co .und-look__i{gap:14px;padding:14px 0;border-bottom:1px solid #f0f0f0}',
     '.und-look--co .und-look__i img{width:64px;height:84px;flex:0 0 64px;border-radius:6px}',
-    '.und-look--co .und-look__n{font:500 12px "Work Sans",sans-serif;letter-spacing:.3px}',
+    '.und-look--co .und-look__n{font:500 12px "Work Sans",sans-serif;letter-spacing:.3px;color:#111!important}',
+    '.uk-offcanvas .und-look--co{border:0!important;border-top:1px solid #eee!important;border-radius:0;margin-top:0!important}',
     '.und-look--co .und-look__p{margin-top:4px;font-size:12px}',
     '.und-look--co .und-look__b{height:34px;padding:0 16px;border-radius:999px;font-size:10px}',
     '.und-look--co .und-look__s button{border-radius:999px;min-width:38px}'
   ].join('');
 
+  // El resumen aparece dos veces: uno para pantallas grandes y otro dentro del panel "Ver mi compra" del celular.
   function poner() {
-    var cont = [].filter.call(document.querySelectorAll('.checkout__detail-container'), function (e) { return e.offsetParent; })[0];
-    if (!cont || typeof window.undLookPanel !== 'function') return false;
-    if (document.querySelector('.und-look--co') || cont.__undCo) return true;
-    cont.__undCo = true;
+    var conts = [].filter.call(document.querySelectorAll('.checkout__detail-container'), function (e) { return !e.__undCo; });
+    if (!conts.length || typeof window.undLookPanel !== 'function') return false;
+    conts.forEach(function (e) { e.__undCo = true; });
     fetch('/v4/cart', { headers: { 'X-CSRF-TOKEN': window.csrf_token, 'X-Requested-With': 'XMLHttpRequest' } })
       .then(function (r) { return r.json(); })
       .then(function (j) {
         var prods = (j.data && j.data.productos) || {};
         var ids = Object.keys(prods).map(function (k) { return prods[k].id; });
-        if (!ids.length) return null;
+        if (!ids.length) return;
         window.undAlAgregar = function () { location.reload(); };
-        return window.undLookPanel(ids);
-      })
-      .then(function (el) {
-        if (!el) return;
         if (!document.getElementById('und-co-css')) {
           var s = document.createElement('style');
           s.id = 'und-co-css';
           s.textContent = css;
           document.head.appendChild(s);
         }
-        el.classList.add('und-look--co');
-        cont.after(el);
+        conts.forEach(function (cont) {
+          window.undLookPanel(ids).then(function (el) {
+            if (!el) return;
+            var cs = getComputedStyle(cont);
+            el.classList.add('und-look--co');
+            el.style.setProperty('margin-left', cs.marginLeft, 'important');
+            el.style.setProperty('margin-right', cs.marginRight, 'important');
+            cont.after(el);
+          });
+        });
       })
       .catch(function () {});
     return true;
