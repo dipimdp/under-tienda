@@ -829,11 +829,12 @@
 (function () {
   var st = document.createElement('style');
   st.textContent =
-    '#und-toast{flex-wrap:wrap;width:340px;padding:16px 40px 16px 16px;border-radius:2px}' +
+    '#und-toast{flex-wrap:wrap;width:340px;padding:16px;border-radius:2px}' +
+    '#und-toast img+div{flex:1;min-width:0;padding-right:22px}' +
     '#und-toast .v{display:none}' +
     '#und-toast .und-tot{flex:0 0 100%;display:flex;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid #e5e5e5;font-size:14px;font-weight:700;color:#111}' +
-    '#und-toast .und-btn{flex:0 0 100%;box-sizing:border-box;margin-top:12px;padding:12px;background:#6b6b6b;color:#fff;text-align:center;font-size:12px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:background .2s}' +
-    '#und-toast .und-btn:hover{background:#111}' +
+    '#und-toast .und-btn{flex:0 0 100%;box-sizing:border-box;margin-top:12px;padding:12px;background:#2e6044;color:#fff;border-radius:8px;text-align:center;font-size:12px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:background .2s}' +
+    '#und-toast .und-btn:hover{background:#1f4530}' +
     '@media(max-width:639px){#und-toast{width:auto}}';
   document.head.appendChild(st);
 
