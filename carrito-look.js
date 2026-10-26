@@ -410,7 +410,7 @@
     amarillo: '#e4c33c', celestes: '#9cc3e0', khaki: '#a89c6e', chocolate: '#4a2f22', oxido: '#a0522d'
   };
   var css = [
-    '.und-col{margin:36px 0 30px;font-family:"Work Sans",sans-serif}',
+    '.und-col{margin:18px 0 6px;font-family:"Work Sans",sans-serif}',
     '.und-col__l{margin:0 0 14px;font-size:14px;font-weight:400;color:#111}',
     '.und-col__s{display:flex;flex-wrap:wrap;gap:14px}',
     '.und-col__s button{position:relative;width:20px;height:20px;padding:0;border:1px solid rgba(0,0,0,.12);border-radius:0;cursor:pointer;background-size:cover;background-position:center}',
