@@ -429,6 +429,7 @@
     '.und-col__m{margin-top:8px;font-size:11px;color:#c0392b}'
   ].join('');
 
+  window.undColores = COLORES;
   function norm(s) { return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
   function base(n) { return norm(n).replace(/\s+\S+$/, ''); }
   function color(n) { return String(n).trim().split(/\s+/).pop(); }
@@ -539,6 +540,128 @@
   var intentos = 40;
   (function esperar() {
     if (!poner() && --intentos) setTimeout(esperar, 250);
+  })();
+})();
+
+/* UNDER - Colores en las tarjetas de producto (categorías, inicio): cuadraditos de color debajo de los precios.
+   Al tocar un color cambia en el lugar la foto, el nombre, el precio y el link de la tarjeta. */
+(function () {
+  var css = [
+    '.und-cs{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:12px 0 6px}',
+    '.und-cs button{position:relative;width:14px;height:14px;padding:0;border:1px solid rgba(0,0,0,.15);border-radius:0;cursor:pointer;background-size:cover;background-position:center}',
+    '.und-cs button.on::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:1px;background:#111}'
+  ].join('');
+
+  function nrm(s) { return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+  function bas(n) { return nrm(n).replace(/\s+\S+$/, ''); }
+  function col(n) { return String(n).trim().split(/\s+/).pop(); }
+  function fmt(n) { return '$' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function num(t) {
+    var m = String(t || '').match(/\$\s*([\d.]+(?:,\d+)?)/);
+    return m ? parseFloat(m[1].replace(/\./g, '').replace(',', '.')) : NaN;
+  }
+
+  function armar(card, todos) {
+    if (card.__und) return;
+    var link = card.querySelector('a.products-feed__product-link');
+    var media = card.querySelector('.products-feed__product-media');
+    if (!link || !media) return;
+    var path = new URL(link.getAttribute('href'), location.href).pathname.replace(/\/$/, '');
+    var yo = todos.filter(function (p) { return p.link === path; })[0];
+    if (!yo) return;
+    var lista = todos.filter(function (p) { return p.cat === yo.cat && bas(p.nombre) === bas(yo.nombre); });
+    card.__und = true;
+    if (lista.length < 2) return;
+
+    var nombre = card.querySelector('.products-feed__product-name');
+    var precio = card.querySelector('.products-feed__product-price');
+    var cuotas = card.querySelector('.products-feed__product-additional');
+    var transf = card.querySelector('.products-feed__product-tranfer-discount');
+    var nameEl = nombre && (nombre.querySelector('a') || nombre);
+    var o = {
+      media: [].slice.call(media.childNodes),
+      nombre: nameEl && nameEl.textContent,
+      href: nameEl && nameEl.getAttribute && nameEl.getAttribute('href'),
+      precio: precio && precio.innerHTML,
+      cuotas: cuotas && cuotas.innerHTML,
+      transf: transf && transf.innerHTML
+    };
+    var p0 = num(precio && precio.textContent), t0 = num(transf && transf.textContent);
+    var razon = p0 && t0 ? t0 / p0 : 0;
+    var nCuotas = cuotas ? (cuotas.textContent.match(/(\d+)\s*cuotas/) || [])[1] : null;
+
+    function poner(p) {
+      if (p.id === yo.id) {
+        media.replaceChildren.apply(media, o.media);
+        if (nameEl) { nameEl.textContent = o.nombre; if (o.href) nameEl.setAttribute('href', o.href); }
+        if (precio) precio.innerHTML = o.precio;
+        if (cuotas) cuotas.innerHTML = o.cuotas;
+        if (transf) transf.innerHTML = o.transf;
+        return;
+      }
+      var a = document.createElement('a');
+      a.className = 'products-feed__product-link';
+      a.href = p.link;
+      var im = document.createElement('img');
+      im.className = 'products-feed__product-image';
+      im.alt = '';
+      im.src = p.img;
+      a.appendChild(im);
+      media.replaceChildren(a);
+      if (nameEl) { nameEl.textContent = p.nombre; if (o.href) nameEl.setAttribute('href', p.link); }
+      var hay = p.stock.filter(function (s) { return s.hay; });
+      var min = Math.min.apply(null, hay.map(function (s) { return s.precio; }));
+      if (precio) precio.textContent = fmt(min);
+      if (cuotas && nCuotas) cuotas.textContent = nCuotas + ' cuotas sin interés de ' + fmt(min / nCuotas);
+      if (transf && razon) transf.textContent = fmt(min * razon) + ' con transferencia';
+    }
+
+    var fila = document.createElement('div');
+    fila.className = 'und-cs';
+    lista.forEach(function (p) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.title = col(p.nombre);
+      b.setAttribute('aria-label', col(p.nombre));
+      var hex = (window.undColores || {})[nrm(col(p.nombre))];
+      if (hex) b.style.backgroundColor = hex; else b.style.backgroundImage = 'url(' + p.img + ')';
+      if (p.id === yo.id) b.classList.add('on');
+      b.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        [].forEach.call(fila.children, function (x) { x.classList.remove('on'); });
+        b.classList.add('on');
+        poner(p);
+      };
+      fila.appendChild(b);
+    });
+    var ancla = transf || cuotas || precio || nombre;
+    if (ancla) ancla.after(fila);
+  }
+
+  function correr() {
+    if (typeof window.undProductos !== 'function') return;
+    var tarjetas = document.querySelectorAll('.products-feed__product-wrapper');
+    if (!tarjetas.length) return;
+    if (!document.getElementById('und-cs-css')) {
+      var st = document.createElement('style');
+      st.id = 'und-cs-css';
+      st.textContent = css;
+      document.head.appendChild(st);
+    }
+    window.undProductos().then(function (todos) {
+      [].forEach.call(document.querySelectorAll('.products-feed__product-wrapper'), function (c) { armar(c, todos); });
+    });
+  }
+
+  var t = null;
+  function programar() { clearTimeout(t); t = setTimeout(correr, 300); }
+  var intentos = 40;
+  (function esperar() {
+    if (typeof window.undProductos === 'function') {
+      correr();
+      new MutationObserver(programar).observe(document.body, { childList: true, subtree: true });
+    } else if (--intentos) setTimeout(esperar, 250);
   })();
 })();
 
