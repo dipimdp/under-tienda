@@ -823,3 +823,44 @@
     location.assign('/');
   }, true);
 })();
+
+/* UNDER - Cartel "¡Agregado al carrito!" (#und-toast, lo arma el script de Etiquetas HTML): suma el total del carrito
+   y un botón gris "VER CARRITO" que abre el carrito lateral. */
+(function () {
+  var st = document.createElement('style');
+  st.textContent =
+    '#und-toast{flex-wrap:wrap;width:340px;padding:16px 40px 16px 16px;border-radius:2px}' +
+    '#und-toast .v{display:none}' +
+    '#und-toast .und-tot{flex:0 0 100%;display:flex;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid #e5e5e5;font-size:14px;font-weight:700;color:#111}' +
+    '#und-toast .und-btn{flex:0 0 100%;box-sizing:border-box;margin-top:12px;padding:12px;background:#6b6b6b;color:#fff;text-align:center;font-size:12px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:background .2s}' +
+    '#und-toast .und-btn:hover{background:#111}' +
+    '@media(max-width:639px){#und-toast{width:auto}}';
+  document.head.appendChild(st);
+
+  function aumentar(e) {
+    var tot = document.createElement('div');
+    tot.className = 'und-tot';
+    tot.innerHTML = '<span>Total</span><span></span>';
+    var btn = document.createElement('div');
+    btn.className = 'und-btn';
+    btn.textContent = 'Ver carrito';
+    btn.onclick = function () { var v = e.querySelector('.v'); if (v) v.click(); };
+    e.appendChild(tot);
+    e.appendChild(btn);
+    fetch('/v4/cart', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var ps = Object.keys(j.data.productos).map(function (k) { return j.data.productos[k]; });
+        var n = 0, t = 0;
+        ps.forEach(function (p) { n += +p.cantidad || 0; t += (+p.cantidad || 0) * (+p.precio_unitario || 0); });
+        tot.firstChild.textContent = 'Total (' + n + (n === 1 ? ' producto' : ' productos') + '):';
+        tot.lastChild.textContent = '$' + Math.round(t).toLocaleString('es-AR');
+      })
+      .catch(function () { tot.style.display = 'none'; });
+  }
+
+  new MutationObserver(function () {
+    var e = document.getElementById('und-toast');
+    if (e && !e.querySelector('.und-tot')) aumentar(e);
+  }).observe(document.documentElement, { childList: true, subtree: true });
+})();
