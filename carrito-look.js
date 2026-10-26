@@ -407,7 +407,7 @@
     natural: '#e8e1d2', beige: '#cdb99a', gris: '#8e9296', negro: '#111111', negra: '#111111', blanco: '#ffffff', blanca: '#ffffff',
     marron: '#6b4a34', verde: '#3f5a43', azul: '#27406b', celeste: '#9cc3e0', bordo: '#6d1f2b', rojo: '#b3262b', topo: '#8b7d72',
     sage: '#9caf94', crema: '#f1e8d2', camel: '#b88a55', arena: '#d8c7a3', oliva: '#6b6b3a', rosa: '#e6b4bd', naranja: '#d9732b',
-    amarillo: '#e4c33c', celestes: '#9cc3e0', khaki: '#a89c6e', chocolate: '#4a2f22'
+    amarillo: '#e4c33c', celestes: '#9cc3e0', khaki: '#a89c6e', chocolate: '#4a2f22', oxido: '#a0522d'
   };
   var css = [
     '.und-col{margin:36px 0 30px;font-family:"Work Sans",sans-serif}',
@@ -438,8 +438,23 @@
 
   window.undColores = COLORES;
   function norm(s) { return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
-  function base(n) { return norm(n).replace(/\s+\S+$/, ''); }
-  function color(n) { return String(n).trim().split(/\s+/).pop(); }
+  // Separa "Bermuda Sastrera Noma gris topo" en base ("bermuda sastrera noma") y color ("gris topo").
+  // Los colores son palabras finales conocidas (hasta 3). Sin color en el nombre, el color es "Original".
+  var VOCAB = Object.keys(COLORES).concat(['oxido', 'oscuro', 'claro', 'militar', 'lavado', 'lavada']);
+  function partes(n) {
+    var w = String(n).trim().split(/\s+/);
+    var k = w.length;
+    while (k > 1 && w.length - k < 3 && VOCAB.indexOf(norm(w[k - 1])) >= 0) k--;
+    return { base: norm(w.slice(0, k).join(' ')), color: w.slice(k).join(' ') };
+  }
+  function hexDe(c) {
+    var n = norm(c);
+    return COLORES[n] || COLORES[n.split(' ').pop()] || COLORES[n.split(' ')[0]];
+  }
+  window.undPartes = partes;
+  window.undHex = hexDe;
+  function base(n) { return partes(n).base; }
+  function color(n) { return partes(n).color || 'Original'; }
   function precio(n) { return '$' + Math.round(n).toLocaleString('es-AR'); }
 
   function agregar(p, s, btn, msg) {
@@ -527,7 +542,7 @@
         b.type = 'button';
         b.title = color(p.nombre);
         b.setAttribute('aria-label', color(p.nombre));
-        var hex = COLORES[norm(color(p.nombre))];
+        var hex = hexDe(color(p.nombre));
         if (hex) b.style.backgroundColor = hex; else b.style.backgroundImage = 'url(' + p.img + ')';
         if (p.id === actual) b.classList.add('on');
         b.onclick = function () {
@@ -556,7 +571,7 @@
           a.href = p.link;
           a.title = color(p.nombre);
           a.setAttribute('aria-label', color(p.nombre));
-          var hex = COLORES[norm(color(p.nombre))];
+          var hex = hexDe(color(p.nombre));
           if (hex) a.style.backgroundColor = hex; else a.style.backgroundImage = 'url(' + p.img + ')';
           if (p.id === actual) a.className = 'on';
           r.appendChild(a);
@@ -584,9 +599,11 @@
     '.und-cs button.on::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:1px;background:#111}'
   ].join('');
 
+  // Tarjetas del listado (categorías) y del inicio: mismo armado, cambia el prefijo de las clases.
+  var TARJETAS = '.products-feed__product-wrapper, .block-products-feed__product-wrapper';
   function nrm(s) { return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
-  function bas(n) { return nrm(n).replace(/\s+\S+$/, ''); }
-  function col(n) { return String(n).trim().split(/\s+/).pop(); }
+  function bas(n) { return window.undPartes(n).base; }
+  function col(n) { return window.undPartes(n).color || 'Original'; }
   function fmt(n) { return '$' + n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function num(t) {
     var m = String(t || '').match(/\$\s*([\d.]+(?:,\d+)?)/);
@@ -595,8 +612,8 @@
 
   function armar(card, todos) {
     if (card.__und) return;
-    var link = card.querySelector('a.products-feed__product-link');
-    var media = card.querySelector('.products-feed__product-media');
+    var link = card.querySelector('a[class*="__product-link"]');
+    var media = card.querySelector('[class*="__product-media"]');
     if (!link || !media) return;
     var path = new URL(link.getAttribute('href'), location.href).pathname.replace(/\/$/, '');
     var yo = todos.filter(function (p) { return p.link === path; })[0];
@@ -605,10 +622,11 @@
     card.__und = true;
     if (lista.length < 2) return;
 
-    var nombre = card.querySelector('.products-feed__product-name');
-    var precio = card.querySelector('.products-feed__product-price');
-    var cuotas = card.querySelector('.products-feed__product-additional');
-    var transf = card.querySelector('.products-feed__product-tranfer-discount');
+    var nombre = card.querySelector('[class*="__product-name"]');
+    var precio = card.querySelector('[class*="__product-price"]');
+    var cuotas = card.querySelector('[class*="__product-additional"]');
+    var transf = card.querySelector('[class*="__product-tranfer-discount"]');
+    var imgOrig = link.querySelector('img');
     var nameEl = nombre && (nombre.querySelector('a') || nombre);
     var o = {
       media: [].slice.call(media.childNodes),
@@ -632,10 +650,10 @@
         return;
       }
       var a = document.createElement('a');
-      a.className = 'products-feed__product-link';
+      a.className = link.className;
       a.href = p.link;
       var im = document.createElement('img');
-      im.className = 'products-feed__product-image';
+      im.className = imgOrig ? imgOrig.className : '';
       im.alt = '';
       im.src = p.img;
       a.appendChild(im);
@@ -658,7 +676,7 @@
       b.type = 'button';
       b.title = col(p.nombre);
       b.setAttribute('aria-label', col(p.nombre));
-      var hex = (window.undColores || {})[nrm(col(p.nombre))];
+      var hex = window.undHex(col(p.nombre));
       if (hex) b.style.backgroundColor = hex; else b.style.backgroundImage = 'url(' + p.img + ')';
       if (p.id === yo.id) b.classList.add('on');
       function elegir() {
@@ -681,7 +699,7 @@
 
   function correr() {
     if (typeof window.undProductos !== 'function') return;
-    var tarjetas = document.querySelectorAll('.products-feed__product-wrapper');
+    var tarjetas = document.querySelectorAll(TARJETAS);
     if (!tarjetas.length) return;
     if (!document.getElementById('und-cs-css')) {
       var st = document.createElement('style');
@@ -690,7 +708,7 @@
       document.head.appendChild(st);
     }
     window.undProductos().then(function (todos) {
-      [].forEach.call(document.querySelectorAll('.products-feed__product-wrapper'), function (c) { armar(c, todos); });
+      [].forEach.call(document.querySelectorAll(TARJETAS), function (c) { armar(c, todos); });
     });
   }
 
