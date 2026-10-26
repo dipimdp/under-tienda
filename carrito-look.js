@@ -410,12 +410,11 @@
     amarillo: '#e4c33c', celestes: '#9cc3e0', khaki: '#a89c6e', chocolate: '#4a2f22'
   };
   var css = [
-    '.und-col{margin:0 0 18px;font-family:"Work Sans",sans-serif}',
-    '.und-col__l{margin:0 0 8px;font-size:11px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:#111}',
-    '.und-col__l span{font-weight:400;color:#666;text-transform:none;letter-spacing:.2px;margin-left:4px}',
-    '.und-col__s{display:flex;flex-wrap:wrap;gap:10px}',
-    '.und-col__s button{width:30px;height:30px;padding:0;border:1px solid #d6d6d6;border-radius:50%;cursor:pointer;background-size:cover;background-position:center;box-shadow:inset 0 0 0 3px #fff}',
-    '.und-col__s button.on{outline:1px solid #111;outline-offset:2px}',
+    '.und-col{margin:36px 0 30px;font-family:"Work Sans",sans-serif}',
+    '.und-col__l{margin:0 0 14px;font-size:14px;font-weight:400;color:#111}',
+    '.und-col__s{display:flex;flex-wrap:wrap;gap:14px}',
+    '.und-col__s button{position:relative;width:20px;height:20px;padding:0;border:1px solid rgba(0,0,0,.12);border-radius:0;cursor:pointer;background-size:cover;background-position:center}',
+    '.und-col__s button.on::after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:1px;background:#111}',
     '.und-col__p{display:flex;gap:14px;margin-top:14px;padding:14px;border:1px solid #e5e5e5;border-radius:12px;background:#fff}',
     '.und-col__p img{width:72px;height:96px;object-fit:cover;background:#f2f2f2;flex:0 0 72px}',
     '.und-col__d{flex:1;min-width:0}',
@@ -510,8 +509,8 @@
       }
       var w = document.createElement('div');
       w.className = 'und-col';
-      w.innerHTML = '<p class="und-col__l">Color<span></span></p><div class="und-col__s"></div><div class="und-col__slot"></div>';
-      var etiqueta = w.querySelector('.und-col__l span');
+      w.innerHTML = '<p class="und-col__l"></p><div class="und-col__s"></div><div class="und-col__slot"></div>';
+      var etiqueta = w.querySelector('.und-col__l');
       var fila = w.querySelector('.und-col__s');
       var slot = w.querySelector('.und-col__slot');
       etiqueta.textContent = color(yo.nombre);
