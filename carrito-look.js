@@ -398,3 +398,14 @@
     if (!poner() && --intentos) setTimeout(esperar, 250);
   })();
 })();
+
+/* UNDER - Carrito vacío: el botón "Volver a la tienda" lleva al inicio (por defecto solo cerraba el panel). */
+(function () {
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('#cart-sidenav .cart-sidenav__button-link');
+    if (!a) return;
+    e.preventDefault();
+    e.stopPropagation();
+    location.assign('/');
+  }, true);
+})();
