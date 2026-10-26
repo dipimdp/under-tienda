@@ -114,7 +114,19 @@
         var v = JSON.parse(localStorage.getItem(CACHE + '_ls') || 'null');
         if (v && v.p) return Promise.resolve(v.p);
       } catch (e) {}
-      return Promise.resolve([]);
+      // Sin lista guardada: el listado de categorías está dentro del HTML del inicio.
+      pool = fetch('/')
+        .then(function (r) { return r.text(); })
+        .then(function (t) {
+          var m = t.match(/var categorias_flatten = (\[[\s\S]*?\]);/);
+          var arr = m ? JSON.parse(m[1]) : null;
+          if (!arr || !arr.length) return [];
+          window.categorias_flatten = arr;
+          pool = null;
+          return productos();
+        })
+        .catch(function () { return []; });
+      return pool;
     }
     pool = Promise.all(Object.keys(cats).map(function (l) { return traer(l, cats[l]).catch(function () { return []; }); }))
       .then(function (listas) {
@@ -750,7 +762,7 @@
    los productos del carrito se piden a /v4/cart y, al añadir una prenda, se recarga la página para que el resumen se actualice. */
 (function () {
   var css = [
-    '.und-look--co{box-sizing:border-box;width:auto;display:block!important;margin-top:16px!important;padding:20px 22px!important;border:1px solid #e6e6e6!important;border-radius:10px;background:#fff;list-style:none}',
+    '.und-look--co{box-sizing:border-box;width:auto;display:block!important;margin-top:0!important;padding:20px 26px 24px!important;border:0!important;border-top:1px solid #eee!important;border-radius:0;background:transparent;list-style:none}',
     '.und-look--co .und-look__t{margin:0 0 6px;font:600 14px Montserrat,sans-serif;letter-spacing:.2px;text-transform:none;color:#111}',
     '.und-look--co .und-look__i{gap:14px;padding:14px 0;border-bottom:1px solid #f0f0f0}',
     '.und-look--co .und-look__i img{width:64px;height:84px;flex:0 0 64px;border-radius:6px}',
