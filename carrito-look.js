@@ -1031,6 +1031,8 @@
     '.und-dsp__c{display:flex;align-items:center;gap:3px;flex:0 0 auto}' +
     '.und-dsp__c i{min-width:30px;padding:6px 4px;border-radius:6px;background:#fff;color:#111;font:800 22px/1 Montserrat,sans-serif;font-style:normal;text-align:center}' +
     '.und-dsp__c u{text-decoration:none;font-weight:800;color:#fff}' +
+    '.cart-sidenav__item.und-dsp-li{display:block!important;list-style:none;padding:10px 0!important}' +
+    '.und-dsp-li .und-dsp{margin:0;color:#fff!important}.und-dsp-li .und-dsp__k{color:rgba(255,255,255,.8)!important}.und-dsp-li .und-dsp__c i{color:#111!important}.und-dsp-li .und-dsp__c u{color:#fff!important}' +
     '@media(max-width:639px){.und-dsp{padding:12px 12px}.und-dsp__c i{min-width:26px;font-size:19px}}';
   document.head.appendChild(st);
 
@@ -1061,19 +1063,33 @@
     }
   }
 
-  function asegurar() {
-    var pp = document.getElementById('und-pp');
-    if (!pp) return;
-    var el = document.querySelector('.und-dsp');
-    if (!el) {
-      el = document.createElement('div');
-      el.className = 'und-dsp';
-      el.innerHTML = '<div class="und-dsp__t"><span class="und-dsp__k">Despacho en el día · A todo el país</span><span class="und-dsp__m"></span></div><div class="und-dsp__c"></div>';
-      pp.after(el);
-    }
-    pintar(el);
+  function crear() {
+    var el = document.createElement('div');
+    el.className = 'und-dsp';
+    el.innerHTML = '<div class="und-dsp__t"><span class="und-dsp__k">Despacho en el día · A todo el país</span><span class="und-dsp__m"></span></div><div class="und-dsp__c"></div>';
+    return el;
   }
 
+  function asegurar() {
+    // Ficha de producto: justo debajo del bloque de precios.
+    var pp = document.getElementById('und-pp');
+    if (pp && !(pp.nextElementSibling && pp.nextElementSibling.classList.contains('und-dsp'))) pp.after(crear());
+    // Carrito lateral: debajo de la barra de envío gratis (el carrito se vuelve a dibujar al cambiar, por eso se revisa siempre).
+    var env = document.querySelector('.cart-sidenav__content .und-env');
+    if (env && !document.querySelector('.cart-sidenav__content .und-dsp')) {
+      var li = document.createElement('li');
+      li.className = 'cart-sidenav__item und-dsp-li';
+      li.appendChild(crear());
+      env.after(li);
+    }
+    [].forEach.call(document.querySelectorAll('.und-dsp'), pintar);
+  }
+
+  var pendiente = false;
   setInterval(asegurar, 1000);
-  new MutationObserver(function () { if (!document.querySelector('.und-dsp')) asegurar(); }).observe(document.documentElement, { childList: true, subtree: true });
+  new MutationObserver(function () {
+    if (pendiente) return;
+    pendiente = true;
+    requestAnimationFrame(function () { pendiente = false; asegurar(); });
+  }).observe(document.documentElement, { childList: true, subtree: true });
 })();
