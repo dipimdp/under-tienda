@@ -1062,7 +1062,7 @@
     if (el.dataset.hoy !== hoy) {
       el.dataset.hoy = hoy;
       el.querySelector('.und-dsp__m').innerHTML = r.hoy
-        ? 'Comprá antes de las ' + HORA_CORTE + ' h y tu pedido se despacha <b>HOY MISMO</b>'
+        ? 'Comprá antes de las ' + HORA_CORTE + 'hs y tu pedido se despacha <b>HOY MISMO</b>'
         : 'Aprovechá, comprá ahora y despachamos tu pedido <b>MAÑANA MISMO</b>';
     }
   }
