@@ -929,3 +929,81 @@
   new MutationObserver(armar).observe(document.documentElement, { childList: true, subtree: true });
   armar();
 })();
+
+/* UNDER - Ficha de producto: bloque de precios ordenado (precio final, MEJOR PRECIO por transferencia, cuotas, retiro y envío gratis).
+   Lee los datos de los elementos nativos de la plantilla (que quedan ocultos pero siguen actualizándose al cambiar de talle). */
+(function () {
+  var st = document.createElement('style');
+  st.textContent =
+    '#und-pp~.product-vip__price,#und-pp~.product-vip__show-payment-offers-discount,#und-pp~.product-vip__payment-offers-container{display:none!important}' +
+    '#und-pp{margin:12px 0 18px;color:#111}' +
+    '#und-pp .l{font-size:14px;color:#555}#und-pp .l b{margin-left:4px;color:#111}' +
+    '#und-pp .bd{display:inline-block;margin-top:8px;padding:3px 9px;border-radius:3px;background:#2e6044;color:#fff;font-size:11px;font-weight:800;letter-spacing:.07em}' +
+    '#und-pp .r{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin-top:2px}' +
+    '#und-pp .big{font:800 40px/1.15 Montserrat,sans-serif;letter-spacing:-.5px;color:#111}' +
+    '#und-pp .off{font-size:16px;font-weight:700;color:#2e6044}' +
+    '#und-pp .s{margin-top:2px;font-size:13px;color:#444}#und-pp .s b{color:#2e6044}' +
+    '#und-pp .c{margin-top:12px;padding-top:12px;border-top:1px solid #e8e8e8;font-size:13px;color:#444}#und-pp .c b{color:#111}' +
+    '#und-pp .box{margin-top:14px;padding:2px 16px;border:1px solid #e3e3e3;border-radius:14px}' +
+    '#und-pp .row{display:flex;align-items:flex-start;gap:12px;padding:13px 0;border-bottom:1px solid #eee;font-size:13px;line-height:1.4;color:#555}' +
+    '#und-pp .row:last-child{border-bottom:0}' +
+    '#und-pp .row svg{flex:0 0 22px;width:22px;height:22px;margin-top:1px;fill:none;stroke:#111;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}' +
+    '#und-pp .row b{color:#2e6044}#und-pp .row b.k{color:#111}' +
+    '@media(max-width:639px){#und-pp .big{font-size:34px}}';
+  document.head.appendChild(st);
+
+  var ICO_LOCAL = '<svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
+  var ICO_ENVIO = '<svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>';
+
+  function num(s) { return +(String(s || '').replace(/[^\d,]/g, '').replace(',', '.')) || 0; }
+  function money(n) { return '$' + Math.round(n).toLocaleString('es-AR'); }
+
+  var ultimo = '', programado = false;
+  function render() {
+    programado = false;
+    var precio = document.querySelector('.product-vip__price');
+    var valor = document.querySelector('.product-vip__price-value');
+    if (!precio || !valor) return;
+    var lista = num(valor.textContent);
+    var fin = num((document.querySelector('.final-price') || {}).textContent);
+    if (!lista) return;
+    var conTransf = fin > 0 && fin < lista;
+    var cuo = (document.querySelector('.product-vip__promo-installments-value') || document.querySelector('.product-vip__promo-installments') || {}).textContent || '';
+    var m = cuo.match(/(\d+)\s*cuotas?[^$]*\$\s*([\d.,]+)/i);
+    var anuncio = (document.querySelector('.header-announcement__text') || {}).textContent || '';
+    var g = anuncio.match(/GRATIS DESDE \$([\d.]+)/i);
+    var umbral = g ? num(g[1].replace(/\./g, '')) : 0;
+    var key = [lista, fin, m ? m[1] + m[2] : '', umbral].join('|');
+    var el = document.getElementById('und-pp');
+    if (el && key === ultimo) return;
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'und-pp';
+      precio.before(el);
+    }
+    ultimo = key;
+    var pct = conTransf ? Math.round((1 - fin / lista) * 100) : 0;
+    var h = '<div class="l">Precio final <b>' + money(lista) + '</b></div>';
+    if (conTransf) {
+      h += '<span class="bd">MEJOR PRECIO</span>' +
+        '<div class="r"><span class="big">' + money(fin) + '</span><span class="off">' + pct + '% OFF</span></div>' +
+        '<div class="s">por transferencia · ahorrás <b>' + money(lista - fin) + '</b></div>';
+    }
+    if (m) h += '<div class="c">' + m[1] + ' cuotas sin interés de <b>' + money(num(m[2])) + '</b></div>';
+    h += '<div class="box"><div class="row">' + ICO_LOCAL + '<div><b>Retirá gratis en Mar del Plata</b><br>Rawson 1550 · listo 24 hs después del pago</div></div>';
+    if (umbral) {
+      h += '<div class="row">' + ICO_ENVIO + '<div>' + (lista >= umbral
+        ? '<b>¡Tenés envío gratis!</b> a sucursal en este producto'
+        : '<b>Envío gratis</b> a sucursal desde <b class="k">' + money(umbral) + '</b> · te faltan <b class="k">' + money(umbral - lista) + '</b>') + '</div></div>';
+    }
+    h += '</div>';
+    el.innerHTML = h;
+  }
+
+  new MutationObserver(function () {
+    if (programado) return;
+    programado = true;
+    requestAnimationFrame(render);
+  }).observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+  render();
+})();
