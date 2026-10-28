@@ -9,8 +9,22 @@
    - abrigo (buzos, camperas)   -> 2 de arriba (remera + camisa) y 2 de abajo
    - abajo (pantalones, bermudas) -> 2 de arriba y 2 abrigos
    Solo muestra prendas con stock que no estén en el carrito. "Añadir" pide talle si hay más de uno. */
+
+/* Cuotas sin interés (texto único para ficha, carrito y tarjetas): 3 cuotas siempre; 6 cuotas solo desde $200.000
+   (así está configurado en Mercado Pago: por debajo de ese monto las 6 cuotas llevan interés). */
+window.undCuotas = function (monto) {
+  var MIN6 = 200000;
+  var f = function (n) { return '$' + Math.round(n).toLocaleString('es-AR'); };
+  var con6 = monto >= MIN6;
+  return {
+    html: con6 ? '3 y 6 cuotas sin interés de <b>' + f(monto / 3) + '</b> y <b>' + f(monto / 6) + '</b>' : '3 cuotas sin interés de <b>' + f(monto / 3) + '</b>',
+    plano: con6 ? '3 y 6 cuotas sin interés de ' + f(monto / 3) + ' y ' + f(monto / 6) : '3 cuotas sin interés de ' + f(monto / 3),
+    nota: con6 ? '' : '6 cuotas sin interés en compras desde ' + f(MIN6)
+  };
+};
+
 (function () {
-  var CATEGORIAS = { remeras: 'remera', camisas: 'camisa', abrigos: 'abrigo', pantalones: 'pantalon', bermudas: 'bermuda' };
+  var CATEGORIAS ={ remeras: 'remera', camisas: 'camisa', abrigos: 'abrigo', pantalones: 'pantalon', bermudas: 'bermuda' };
   var GRUPOS = { arriba: ['remera', 'camisa'], abrigo: ['buzo', 'campera'], abajo: ['pantalon', 'bermuda'] };
   var CACHE = 'und_look_v2';
 
@@ -645,7 +659,18 @@
     return m ? parseFloat(m[1].replace(/\./g, '').replace(',', '.')) : NaN;
   }
 
+  // El texto de cuotas de la plantilla dice "6 cuotas sin interés" para todo: se reemplaza según el monto (6 cuotas solo desde $200.000).
+  function ajustarCuotas(card) {
+    if (card.__undQ) return;
+    var el = card.querySelector('[class*="__product-additional"]');
+    var m = el && el.textContent.match(/(\d+)\s*cuotas[^$]*\$\s*([\d.]+(?:,\d+)?)/);
+    if (!m) return;
+    card.__undQ = true;
+    el.textContent = window.undCuotas(+m[1] * num('$' + m[2])).plano;
+  }
+
   function armar(card, todos) {
+    ajustarCuotas(card);
     if (card.__und) return;
     var link = card.querySelector('a[class*="__product-link"]');
     var media = card.querySelector('[class*="__product-media"]');
@@ -697,7 +722,7 @@
       var hay = p.stock.filter(function (s) { return s.hay; });
       var min = Math.min.apply(null, hay.map(function (s) { return s.precio; }));
       if (precio) precio.textContent = fmt(min);
-      if (cuotas && nCuotas) cuotas.textContent = nCuotas + ' cuotas sin interés de ' + fmt(min / nCuotas);
+      if (cuotas && nCuotas) cuotas.textContent = window.undCuotas(min).plano;
       if (transf && razon) {
         var fuerte = transf.querySelector('strong');
         if (fuerte) fuerte.textContent = fmt(min * razon); else transf.textContent = fmt(min * razon) + ' con transferencia';
@@ -904,8 +929,8 @@
     var total = num(precios[precios.length - 1].textContent);
     var k = +window.transfer_discount || 0;
     var ahorro = sub * k / 100;
-    var CUOTAS = [3, 6]; // cuotas sin interés vigentes
-    var cuotasTxt = CUOTAS.join(' y ') + ' cuotas sin interés de ' + CUOTAS.map(function (n) { return '<b>' + money(total / n) + '</b>'; }).join(' y ');
+    var cq = window.undCuotas(total);
+    var cuotasTxt = cq.html + (cq.nota ? '<br>' + cq.nota : '');
 
     var li = document.createElement('li');
     li.className = 'cart-sidenav__item und-pay';
@@ -944,7 +969,7 @@
     '#und-pp .big{font:800 40px/1.15 Montserrat,sans-serif;letter-spacing:-.5px;color:#111}' +
     '#und-pp .off{font-size:16px;font-weight:700;color:#2e6044}' +
     '#und-pp .s{margin-top:2px;font-size:13px;color:#444}#und-pp .s b{color:#2e6044}' +
-    '#und-pp .c{margin-top:12px;padding-top:12px;border-top:1px solid #e8e8e8;font-size:13px;color:#444}#und-pp .c b{color:#111}' +
+    '#und-pp .c{margin-top:12px;padding-top:12px;border-top:1px solid #e8e8e8;font-size:13px;color:#444}#und-pp .c b{color:#111}#und-pp .c small{display:block;margin-top:2px;font-size:12px;color:#777}' +
     '#und-pp .pay{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}' +
     '#und-pp .pay span{display:flex;align-items:center;justify-content:center;width:46px;height:30px;border:1px solid #e3e3e3;border-radius:6px;background:#fff}' +
     '#und-pp .pay img{max-width:34px;max-height:20px;width:auto;height:auto}' +
@@ -965,7 +990,6 @@
   function num(s) { return +(String(s || '').replace(/[^\d,]/g, '').replace(',', '.')) || 0; }
   function money(n) { return '$' + Math.round(n).toLocaleString('es-AR'); }
 
-  var CUOTAS = [3, 6]; // cuotas sin interés vigentes
   var ultimo = '', programado = false;
   function render() {
     programado = false;
@@ -997,7 +1021,10 @@
         '<div class="r"><span class="big">' + money(fin) + '</span><span class="off">' + pct + '% OFF</span></div>' +
         '<div class="s">por transferencia · ahorrás <b>' + money(lista - fin) + '</b></div>';
     }
-    if (m) h += '<div class="c">' + CUOTAS.join(' y ') + ' cuotas sin interés de ' + CUOTAS.map(function (n) { return '<b>' + money(lista / n) + '</b>'; }).join(' y ') + '</div>';
+    if (m) {
+      var cq = window.undCuotas(lista);
+      h += '<div class="c">' + cq.html + (cq.nota ? '<small>' + cq.nota + '</small>' : '') + '</div>';
+    }
     h += '<div class="pay">' + MEDIOS.map(function (x) {
       return '<span><img src="https://dk0k1i3js6c49.cloudfront.net/applications/logos/payment-icons/' + x[0] + '.png" alt="' + x[1] + '" loading="lazy"></span>';
     }).join('') + '</div>';
