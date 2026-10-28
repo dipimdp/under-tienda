@@ -1046,6 +1046,102 @@ window.undCuotas = function (monto) {
   render();
 })();
 
+/* UNDER - Inicio: fila de reels de Instagram (embed oficial de Instagram) debajo del carrusel principal.
+   Para agregar o quitar un reel: editar la lista REELS (es el código que va después de /reel/ en el link). El reel
+   arranca silenciado y suena al primer toque en el ▶ (lo decide el navegador). Cada reel carga recién cuando llega a la pantalla. */
+(function () {
+  if (location.pathname !== '/') return;
+  var REELS = ['DeFxAqWg7TC', 'Dd6rMXWycwM', 'DcHuaMhA0AX', 'Db1Sy3zykHF', 'DbjmdyxABJh', 'DXnRLxJAG4T', 'DcMvChthI52', 'DdCBJvCy-9R'];
+  var PERFIL = 'https://www.instagram.com/under.ind_/';
+  var ALTO = 597; // alto que informa Instagram para un embed de 326 px de ancho
+
+  var st = document.createElement('style');
+  st.textContent =
+    '.und-ig{max-width:1500px;margin:36px auto 28px;padding:0 16px}' +
+    '.und-ig__h{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:0 0 14px}' +
+    '.und-ig__t{margin:0;font:700 22px/1.2 Montserrat,sans-serif;letter-spacing:.02em;text-transform:uppercase;color:#111}' +
+    '.und-ig__s{display:block;margin-top:4px;font:400 13px "Work Sans",sans-serif;color:#555}' +
+    '.und-ig__s a{color:#111;font-weight:600;text-decoration:underline}' +
+    '.und-ig__n{display:none;gap:8px}' +
+    '.und-ig__n button{width:38px;height:38px;border:1px solid #ccc;border-radius:50%;background:#fff;font-size:18px;line-height:1;cursor:pointer;color:#111}' +
+    '.und-ig__n button:hover{background:#111;color:#fff}' +
+    '.und-ig__k{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:10px;scrollbar-width:thin}' +
+    '.und-ig__c{flex:0 0 326px;width:326px;min-height:' + ALTO + 'px;scroll-snap-align:start;border-radius:8px;background:#f3f3f3}' +
+    '.und-ig__c iframe{display:block;width:326px;height:' + ALTO + 'px;border:0;border-radius:8px}' +
+    '@media(min-width:960px){.und-ig__n{display:flex}}' +
+    '@media(max-width:639px){.und-ig__t{font-size:18px}}';
+  document.head.appendChild(st);
+
+  function cargar(card) {
+    if (card.__und) return;
+    card.__und = true;
+    var f = document.createElement('iframe');
+    f.src = 'https://www.instagram.com/reel/' + card.dataset.id + '/embed/';
+    f.title = 'Reel de Instagram de UNDER';
+    f.setAttribute('allowfullscreen', '');
+    f.setAttribute('scrolling', 'no');
+    f.allow = 'autoplay; encrypted-media; fullscreen; clipboard-write';
+    card.appendChild(f);
+  }
+
+  function armar() {
+    if (document.querySelector('.und-ig')) return true;
+    var ancla = document.querySelector('section.block-carrousel') || document.querySelector('section.block-products-feed');
+    if (!ancla) return false;
+    var sec = document.createElement('section');
+    sec.className = 'und-ig';
+    sec.innerHTML =
+      '<div class="und-ig__h"><div><h2 class="und-ig__t">UNDER en Instagram</h2>' +
+      '<span class="und-ig__s">Mirá las prendas en movimiento · <a href="' + PERFIL + '" target="_blank" rel="noopener">@under.ind_</a></span></div>' +
+      '<div class="und-ig__n"><button type="button" aria-label="Anterior">‹</button><button type="button" aria-label="Siguiente">›</button></div></div>' +
+      '<div class="und-ig__k"></div>';
+    var pista = sec.querySelector('.und-ig__k');
+    REELS.forEach(function (id) {
+      var c = document.createElement('div');
+      c.className = 'und-ig__c';
+      c.dataset.id = id;
+      pista.appendChild(c);
+    });
+    var bs = sec.querySelectorAll('.und-ig__n button');
+    bs[0].onclick = function () { pista.scrollBy({ left: -342 * 2, behavior: 'smooth' }); };
+    bs[1].onclick = function () { pista.scrollBy({ left: 342 * 2, behavior: 'smooth' }); };
+    ancla.after(sec);
+
+    var cards = [].slice.call(pista.children);
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (es) {
+        es.forEach(function (e) { if (e.isIntersecting) { cargar(e.target); io.unobserve(e.target); } });
+      }, { rootMargin: '0px 400px 400px 400px' });
+      cards.forEach(function (c) { io.observe(c); });
+    } else {
+      cards.forEach(cargar);
+    }
+    return true;
+  }
+
+  // Instagram avisa el alto real del reel: se ajusta cada tarjeta para que no quede barra de scroll ni espacio sobrante.
+  window.addEventListener('message', function (e) {
+    var h = '';
+    try { h = new URL(e.origin).hostname; } catch (x) { return; }
+    if (!/(^|\.)instagram\.com$/.test(h)) return;
+    var d = e.data;
+    try { if (typeof d === 'string') d = JSON.parse(d); } catch (x) { return; }
+    if (!d || d.type !== 'MEASURE' || !d.details || !d.details.height) return;
+    [].forEach.call(document.querySelectorAll('.und-ig__c iframe'), function (f) {
+      if (f.contentWindow === e.source) {
+        f.style.height = d.details.height + 'px';
+        f.parentNode.style.minHeight = d.details.height + 'px';
+      }
+    });
+  });
+
+  var intentos = 0;
+  (function reintentar() {
+    try { if (armar() || ++intentos > 30) return; } catch (x) { return; }
+    setTimeout(reintentar, 300);
+  })();
+})();
+
 /* UNDER - Ficha de producto: banner negro con cuenta regresiva hasta las 15 h (hora de Argentina) de cada día:
    comprando antes se despacha el mismo día (envíos a todo el país; no promete entrega, solo despacho); de las 15 h a las 00 h no hay contador y dice que se despacha mañana mismo; a las 00 h vuelve a empezar. */
 (function () {
