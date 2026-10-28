@@ -1234,7 +1234,7 @@ window.undCuotas = function (monto) {
     '.und-zm{position:fixed;inset:0;z-index:2147483000;background:#fff;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .18s;touch-action:pinch-zoom}' +
     '.und-zm.on{opacity:1}' +
     '.und-zm__v{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}' +
-    '.und-zm__i{max-width:100vw;max-height:100vh;width:auto;height:auto;object-fit:contain;cursor:zoom-in;user-select:none;-webkit-user-drag:none;transition:transform .2s}' +
+    '.und-zm__i{max-width:100vw;width:auto;height:100vh;object-fit:contain;cursor:zoom-in;user-select:none;-webkit-user-drag:none;transition:transform .2s}' +
     '.und-zm.z .und-zm__i{cursor:zoom-out}' +
     '.und-zm button{position:absolute;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:rgba(17,17,17,.08);color:#111;cursor:pointer;line-height:1;transition:background .15s}' +
     '.und-zm button:hover{background:rgba(17,17,17,.2)}' +
