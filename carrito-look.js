@@ -1023,17 +1023,17 @@
   var HORA_CORTE = 15;
   var st = document.createElement('style');
   st.textContent =
-    '.und-dsp{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 18px;padding:14px 16px;border-radius:16px;background:#d1241b;color:#fff}' +
+    '.und-dsp{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 10px;margin:0 0 14px;padding:10px 14px;border-radius:14px;background:#d1241b;color:#fff}' +
+    '.und-dsp__k{flex:0 0 100%;display:block;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.8);white-space:nowrap}' +
     '.und-dsp__t{flex:1;min-width:0}' +
-    '.und-dsp__k{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.8)}' +
-    '.und-dsp__m{display:block;margin-top:4px;font-size:14px;line-height:1.3}' +
-    '.und-dsp__m b{display:block;font-size:15px;letter-spacing:.04em}' +
+    '.und-dsp__m{display:block;font-size:13px;line-height:1.3}' +
+    '.und-dsp__m b{font-size:13px;letter-spacing:.03em}' +
     '.und-dsp__c{display:flex;align-items:center;gap:3px;flex:0 0 auto}' +
     '.und-dsp__c i{min-width:30px;padding:6px 4px;border-radius:6px;background:#fff;color:#111;font:800 22px/1 Montserrat,sans-serif;font-style:normal;text-align:center}' +
     '.und-dsp__c u{text-decoration:none;font-weight:800;color:#fff}' +
     '.cart-sidenav__item.und-dsp-li{display:block!important;list-style:none;padding:10px 0!important}' +
     '.und-dsp-li .und-dsp{margin:0;color:#fff!important}.und-dsp-li .und-dsp__k{color:rgba(255,255,255,.8)!important}.und-dsp-li .und-dsp__c i{color:#111!important}.und-dsp-li .und-dsp__c u{color:#fff!important}' +
-    '@media(max-width:639px){.und-dsp{padding:12px 12px}.und-dsp__c i{min-width:26px;font-size:19px}}';
+    '@media(max-width:639px){.und-dsp__c i{min-width:26px;font-size:19px}}';
   document.head.appendChild(st);
 
   function dos(n) { return (n < 10 ? '0' : '') + n; }
@@ -1070,7 +1070,7 @@
   function crear() {
     var el = document.createElement('div');
     el.className = 'und-dsp';
-    el.innerHTML = '<div class="und-dsp__t"><span class="und-dsp__k">Despacho en el día · A todo el país</span><span class="und-dsp__m"></span></div><div class="und-dsp__c"></div>';
+    el.innerHTML = '<span class="und-dsp__k">Despacho en el día · A todo el país</span><div class="und-dsp__t"><span class="und-dsp__m"></span></div><div class="und-dsp__c"></div>';
     return el;
   }
 
