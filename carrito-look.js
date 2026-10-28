@@ -1018,7 +1018,7 @@
 })();
 
 /* UNDER - Ficha de producto: banner negro con cuenta regresiva hasta las 15 h (hora de Argentina) de cada día:
-   comprando antes se despacha el mismo día (envíos a todo el país; no promete entrega, solo despacho); después de las 15 h cuenta hasta las 15 h de mañana. */
+   comprando antes se despacha el mismo día (envíos a todo el país; no promete entrega, solo despacho); de las 15 h a las 00 h no hay contador y dice que se despacha mañana mismo; a las 00 h vuelve a empezar. */
 (function () {
   var HORA_CORTE = 15;
   var st = document.createElement('style');
@@ -1052,14 +1052,18 @@
     var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), seg = s % 60;
     var c = el.querySelector('.und-dsp__c');
     var txt = dos(h) + ':' + dos(m) + ':' + dos(seg);
-    if (c.dataset.v !== txt) {
+    // Después de las 15 h (hasta las 00 h) no hay cuenta regresiva: solo el mensaje de despacho para mañana.
+    c.style.display = r.hoy ? '' : 'none';
+    if (r.hoy && c.dataset.v !== txt) {
       c.dataset.v = txt;
       c.innerHTML = '<i>' + dos(h) + '</i><u>:</u><i>' + dos(m) + '</i><u>:</u><i>' + dos(seg) + '</i>';
     }
     var hoy = r.hoy ? '1' : '0';
     if (el.dataset.hoy !== hoy) {
       el.dataset.hoy = hoy;
-      el.querySelector('.und-dsp__m').innerHTML = 'Comprá antes de las ' + HORA_CORTE + ' h y tu pedido se despacha <b>' + (r.hoy ? 'HOY' : 'MAÑANA') + '</b>';
+      el.querySelector('.und-dsp__m').innerHTML = r.hoy
+        ? 'Comprá antes de las ' + HORA_CORTE + ' h y tu pedido se despacha <b>HOY MISMO</b>'
+        : 'Aprovechá, comprá ahora y despachamos tu pedido <b>MAÑANA MISMO</b>';
     }
   }
 
