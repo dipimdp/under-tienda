@@ -1016,3 +1016,64 @@
   }).observe(document.documentElement, { childList: true, subtree: true, characterData: true });
   render();
 })();
+
+/* UNDER - Ficha de producto: banner negro con cuenta regresiva hasta las 15 h (hora de Argentina) de cada día:
+   comprando antes se despacha el mismo día (envíos a todo el país; no promete entrega, solo despacho); después de las 15 h cuenta hasta las 15 h de mañana. */
+(function () {
+  var HORA_CORTE = 15;
+  var st = document.createElement('style');
+  st.textContent =
+    '.und-dsp{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 18px;padding:14px 16px;border-radius:16px;background:#d1241b;color:#fff}' +
+    '.und-dsp__t{flex:1;min-width:0}' +
+    '.und-dsp__k{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.8)}' +
+    '.und-dsp__m{display:block;margin-top:4px;font-size:14px;line-height:1.3}' +
+    '.und-dsp__m b{display:block;font-size:15px;letter-spacing:.04em}' +
+    '.und-dsp__c{display:flex;align-items:center;gap:3px;flex:0 0 auto}' +
+    '.und-dsp__c i{min-width:30px;padding:6px 4px;border-radius:6px;background:#fff;color:#111;font:800 22px/1 Montserrat,sans-serif;font-style:normal;text-align:center}' +
+    '.und-dsp__c u{text-decoration:none;font-weight:800;color:#fff}' +
+    '@media(max-width:639px){.und-dsp{padding:12px 12px}.und-dsp__c i{min-width:26px;font-size:19px}}';
+  document.head.appendChild(st);
+
+  function dos(n) { return (n < 10 ? '0' : '') + n; }
+
+  function restante() {
+    var ar = new Date(Date.now() - 3 * 3600 * 1000); // Argentina = UTC-3, sin horario de verano
+    var corte = Date.UTC(ar.getUTCFullYear(), ar.getUTCMonth(), ar.getUTCDate(), HORA_CORTE);
+    var hoy = ar.getTime() < corte;
+    if (!hoy) corte += 24 * 3600 * 1000;
+    return { ms: corte - ar.getTime(), hoy: hoy };
+  }
+
+  function pintar(el) {
+    var r = restante();
+    var s = Math.floor(r.ms / 1000);
+    var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), seg = s % 60;
+    var c = el.querySelector('.und-dsp__c');
+    var txt = dos(h) + ':' + dos(m) + ':' + dos(seg);
+    if (c.dataset.v !== txt) {
+      c.dataset.v = txt;
+      c.innerHTML = '<i>' + dos(h) + '</i><u>:</u><i>' + dos(m) + '</i><u>:</u><i>' + dos(seg) + '</i>';
+    }
+    var hoy = r.hoy ? '1' : '0';
+    if (el.dataset.hoy !== hoy) {
+      el.dataset.hoy = hoy;
+      el.querySelector('.und-dsp__m').innerHTML = 'Comprá antes de las ' + HORA_CORTE + ' h y tu pedido se despacha <b>' + (r.hoy ? 'HOY' : 'MAÑANA') + '</b>';
+    }
+  }
+
+  function asegurar() {
+    var pp = document.getElementById('und-pp');
+    if (!pp) return;
+    var el = document.querySelector('.und-dsp');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'und-dsp';
+      el.innerHTML = '<div class="und-dsp__t"><span class="und-dsp__k">Despacho en el día · A todo el país</span><span class="und-dsp__m"></span></div><div class="und-dsp__c"></div>';
+      pp.after(el);
+    }
+    pintar(el);
+  }
+
+  setInterval(asegurar, 1000);
+  new MutationObserver(function () { if (!document.querySelector('.und-dsp')) asegurar(); }).observe(document.documentElement, { childList: true, subtree: true });
+})();
