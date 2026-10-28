@@ -1223,54 +1223,29 @@ window.undCuotas = function (monto) {
   }).observe(document.documentElement, { childList: true, subtree: true });
 })();
 
-/* UNDER - Ficha de producto: al hacer clic en una foto se abre a pantalla completa con la prenda entera a la vista
-   (la plantilla tiene el cursor de mano pero el clic no hacía nada). Flechas / teclas ← → / deslizar para cambiar de foto,
-   un clic sobre la foto amplía al doble, Esc / × / clic afuera para cerrar. */
+/* UNDER - Ficha de producto: al hacer clic en una foto se abre a pantalla completa y las fotos se recorren HACIA ABAJO
+   (una debajo de otra, cada una entera en pantalla), empezando por la que se tocó. Un clic sobre la foto amplía al doble
+   (el mouse la recorre), Esc / × / clic afuera para cerrar. La plantilla tenía el cursor de mano pero el clic no hacía nada. */
 (function () {
   var SEL = '.product-vip__images-grid-mini-image';
   var st = document.createElement('style');
   st.textContent =
     SEL + '{cursor:zoom-in}' +
-    '.und-zm{position:fixed;inset:0;z-index:2147483000;background:#fff;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .18s;touch-action:pinch-zoom}' +
+    '.und-zm{position:fixed;inset:0;z-index:2147483000;background:#fff;opacity:0;transition:opacity .18s}' +
     '.und-zm.on{opacity:1}' +
-    '.und-zm__v{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}' +
-    '.und-zm__i{max-width:100vw;width:auto;height:100vh;object-fit:contain;cursor:zoom-in;user-select:none;-webkit-user-drag:none;transition:transform .2s}' +
-    '.und-zm.z .und-zm__i{cursor:zoom-out}' +
-    '.und-zm button{position:absolute;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:rgba(17,17,17,.08);color:#111;cursor:pointer;line-height:1;transition:background .15s}' +
-    '.und-zm button:hover{background:rgba(17,17,17,.2)}' +
-    '.und-zm__x{top:14px;right:14px;width:44px;height:44px;font-size:26px}' +
-    '.und-zm__p,.und-zm__n{top:50%;width:46px;height:46px;margin-top:-23px;font-size:26px}' +
-    '.und-zm__p{left:14px}.und-zm__n{right:14px}' +
-    '.und-zm__c{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);padding:4px 12px;border-radius:99px;background:rgba(17,17,17,.08);font:600 12px "Work Sans",sans-serif;color:#111}' +
-    '@media(max-width:639px){.und-zm__p,.und-zm__n{display:none}}';
+    '.und-zm__l{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scroll-snap-type:y proximity;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}' +
+    '.und-zm__s{height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center;scroll-snap-align:start;cursor:zoom-in}' +
+    '.und-zm__s.z{cursor:zoom-out}' +
+    '.und-zm__i{display:block;max-width:100vw;height:100vh;width:auto;object-fit:contain;user-select:none;-webkit-user-drag:none;transition:transform .2s}' +
+    '.und-zm__x{position:absolute;top:14px;right:14px;z-index:2;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:rgba(17,17,17,.08);color:#111;font-size:26px;line-height:1;cursor:pointer;transition:background .15s}' +
+    '.und-zm__x:hover{background:rgba(17,17,17,.2)}' +
+    '.und-zm__c{position:absolute;bottom:14px;left:50%;z-index:2;transform:translateX(-50%);padding:4px 12px;border-radius:99px;background:rgba(17,17,17,.08);font:600 12px "Work Sans",sans-serif;color:#111;pointer-events:none}' +
+    '@media(max-width:639px){.und-zm__s{height:auto;min-height:100vh}.und-zm__i{width:100vw;height:auto;max-height:100vh}}';
   document.head.appendChild(st);
 
-  var fotos = [], idx = 0, caja = null, zoom = false, tx = 0;
+  var caja = null, hojas = [], actual = 0;
 
   function urlDe(im) { return im.getAttribute('data-src') || im.currentSrc || im.src || ''; }
-
-  function mostrar() {
-    var img = caja.querySelector('.und-zm__i');
-    img.src = fotos[idx];
-    quitarZoom();
-    var c = caja.querySelector('.und-zm__c');
-    if (c) c.textContent = (idx + 1) + ' / ' + fotos.length;
-    [fotos[(idx + 1) % fotos.length], fotos[(idx - 1 + fotos.length) % fotos.length]].forEach(function (u) { new Image().src = u; });
-  }
-
-  function quitarZoom() {
-    zoom = false;
-    caja.classList.remove('z');
-    var img = caja.querySelector('.und-zm__i');
-    img.style.transform = '';
-    img.style.transformOrigin = '';
-  }
-
-  function ir(d) {
-    if (fotos.length < 2) return;
-    idx = (idx + d + fotos.length) % fotos.length;
-    mostrar();
-  }
 
   function cerrar() {
     if (!caja) return;
@@ -1284,61 +1259,82 @@ window.undCuotas = function (monto) {
 
   function teclas(e) {
     if (e.key === 'Escape') { e.preventDefault(); cerrar(); }
-    else if (e.key === 'ArrowLeft') { ir(-1); }
-    else if (e.key === 'ArrowRight') { ir(1); }
+    else if (caja && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      e.preventDefault();
+      var l = caja.querySelector('.und-zm__l');
+      l.scrollBy({ top: (e.key === 'ArrowDown' ? 1 : -1) * innerHeight, behavior: 'smooth' });
+    }
   }
 
-  function abrir(lista, i) {
+  function quitarZoom(s) {
+    s.classList.remove('z');
+    var i = s.querySelector('img');
+    i.style.transform = '';
+    i.style.transformOrigin = '';
+    s.__zoom = false;
+  }
+
+  function abrir(urls, inicio) {
     if (caja) return;
-    fotos = lista; idx = i;
     caja = document.createElement('div');
     caja.className = 'und-zm';
     caja.setAttribute('role', 'dialog');
-    caja.setAttribute('aria-label', 'Foto ampliada');
-    var multi = fotos.length > 1;
-    caja.innerHTML =
-      '<div class="und-zm__v"><img class="und-zm__i" alt=""></div>' +
-      '<button type="button" class="und-zm__x" aria-label="Cerrar">&times;</button>' +
-      (multi ? '<button type="button" class="und-zm__p" aria-label="Foto anterior">&#8249;</button><button type="button" class="und-zm__n" aria-label="Foto siguiente">&#8250;</button><span class="und-zm__c"></span>' : '');
+    caja.setAttribute('aria-label', 'Fotos ampliadas');
+    var lista = document.createElement('div');
+    lista.className = 'und-zm__l';
+    hojas = urls.map(function (u, n) {
+      var s = document.createElement('div');
+      s.className = 'und-zm__s';
+      var i = document.createElement('img');
+      i.className = 'und-zm__i';
+      i.alt = '';
+      i.decoding = 'async';
+      i.src = u;
+      s.appendChild(i);
+      s.onclick = function (e) {
+        if (s.__zoom) { quitarZoom(s); return; }
+        var r = i.getBoundingClientRect();
+        s.__r = r;
+        i.style.transformOrigin = ((e.clientX - r.left) / r.width * 100) + '% ' + ((e.clientY - r.top) / r.height * 100) + '%';
+        i.style.transform = 'scale(2)';
+        s.__zoom = true;
+        s.classList.add('z');
+      };
+      s.onmousemove = function (e) {
+        if (!s.__zoom || !s.__r) return;
+        var r = s.__r;
+        var ox = Math.max(0, Math.min(100, (e.clientX - r.left) / r.width * 100));
+        var oy = Math.max(0, Math.min(100, (e.clientY - r.top) / r.height * 100));
+        i.style.transformOrigin = ox + '% ' + oy + '%';
+      };
+      lista.appendChild(s);
+      return s;
+    });
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'und-zm__x';
+    x.setAttribute('aria-label', 'Cerrar');
+    x.innerHTML = '&times;';
+    x.onclick = cerrar;
+    caja.appendChild(lista);
+    caja.appendChild(x);
+    var cont = null;
+    if (urls.length > 1) {
+      cont = document.createElement('span');
+      cont.className = 'und-zm__c';
+      caja.appendChild(cont);
+    }
     document.body.appendChild(caja);
     document.documentElement.style.overflow = 'hidden';
-    mostrar();
-    requestAnimationFrame(function () { caja.classList.add('on'); });
-
-    var img = caja.querySelector('.und-zm__i');
-    caja.querySelector('.und-zm__x').onclick = cerrar;
-    if (multi) {
-      caja.querySelector('.und-zm__p').onclick = function (e) { e.stopPropagation(); ir(-1); };
-      caja.querySelector('.und-zm__n').onclick = function (e) { e.stopPropagation(); ir(1); };
+    function marcar() {
+      var n = Math.round(lista.scrollTop / Math.max(1, hojas[0].offsetHeight));
+      n = Math.max(0, Math.min(hojas.length - 1, n));
+      if (cont) cont.textContent = (n + 1) + ' / ' + hojas.length;
     }
-    // Clic en el fondo cierra; clic en la foto alterna entre prenda entera y ampliada al doble.
-    caja.querySelector('.und-zm__v').onclick = function (e) { if (e.target !== img) cerrar(); };
-    img.onclick = function (e) {
-      e.stopPropagation();
-      if (zoom) { quitarZoom(); return; }
-      var r = img.getBoundingClientRect();
-      caja.__r = r; // caja de la foto sin ampliar
-      img.style.transformOrigin = ((e.clientX - r.left) / r.width * 100) + '% ' + ((e.clientY - r.top) / r.height * 100) + '%';
-      img.style.transform = 'scale(2)';
-      zoom = true;
-      caja.classList.add('z');
-    };
-    // En pantalla ampliada, el mouse mueve la foto para recorrerla.
-    caja.addEventListener('mousemove', function (e) {
-      if (!zoom || !caja.__r) return;
-      var r = caja.__r;
-      var ox = Math.max(0, Math.min(100, (e.clientX - r.left) / r.width * 100));
-      var oy = Math.max(0, Math.min(100, (e.clientY - r.top) / r.height * 100));
-      img.style.transformOrigin = ox + '% ' + oy + '%';
-    });
-    // Deslizar con el dedo para cambiar de foto (solo si no está ampliada).
-    caja.addEventListener('touchstart', function (e) { tx = e.touches.length === 1 ? e.touches[0].clientX : null; }, { passive: true });
-    caja.addEventListener('touchend', function (e) {
-      if (tx === null || zoom) return;
-      var dx = e.changedTouches[0].clientX - tx;
-      if (Math.abs(dx) > 60) ir(dx < 0 ? 1 : -1);
-      tx = null;
-    }, { passive: true });
+    lista.addEventListener('scroll', marcar, { passive: true });
+    hojas[inicio].scrollIntoView({ block: 'start' });
+    marcar();
+    requestAnimationFrame(function () { caja && caja.classList.add('on'); });
     document.addEventListener('keydown', teclas, true);
   }
 
