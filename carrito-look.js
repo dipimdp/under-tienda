@@ -904,13 +904,14 @@
     var total = num(precios[precios.length - 1].textContent);
     var k = +window.transfer_discount || 0;
     var ahorro = sub * k / 100;
-    var cuota = total / 3;
+    var CUOTAS = [3, 6]; // cuotas sin interés vigentes
+    var cuotasTxt = CUOTAS.join(' y ') + ' cuotas sin interés de ' + CUOTAS.map(function (n) { return '<b>' + money(total / n) + '</b>'; }).join(' y ');
 
     var li = document.createElement('li');
     li.className = 'cart-sidenav__item und-pay';
     var html = '<p class="und-pay__h">Iniciá el pago con:</p>' +
       '<div class="und-pc" data-k="t"><div class="und-pc__r"><div><span class="und-pc__t">Pago con tarjeta</span>' +
-      '<span class="und-pc__s">3 cuotas sin interés de <b>' + money(cuota) + '</b></span></div>' +
+      '<span class="und-pc__s">' + cuotasTxt + '</span></div>' +
       '<div class="und-pc__p">' + money(total) + '</div></div>' +
       '<div class="und-pc__g"><span>Iniciar compra</span><span>→</span></div></div>';
     if (k) {
@@ -964,6 +965,7 @@
   function num(s) { return +(String(s || '').replace(/[^\d,]/g, '').replace(',', '.')) || 0; }
   function money(n) { return '$' + Math.round(n).toLocaleString('es-AR'); }
 
+  var CUOTAS = [3, 6]; // cuotas sin interés vigentes
   var ultimo = '', programado = false;
   function render() {
     programado = false;
@@ -995,7 +997,7 @@
         '<div class="r"><span class="big">' + money(fin) + '</span><span class="off">' + pct + '% OFF</span></div>' +
         '<div class="s">por transferencia · ahorrás <b>' + money(lista - fin) + '</b></div>';
     }
-    if (m) h += '<div class="c">' + m[1] + ' cuotas sin interés de <b>' + money(num(m[2])) + '</b></div>';
+    if (m) h += '<div class="c">' + CUOTAS.join(' y ') + ' cuotas sin interés de ' + CUOTAS.map(function (n) { return '<b>' + money(lista / n) + '</b>'; }).join(' y ') + '</div>';
     h += '<div class="pay">' + MEDIOS.map(function (x) {
       return '<span><img src="https://dk0k1i3js6c49.cloudfront.net/applications/logos/payment-icons/' + x[0] + '.png" alt="' + x[1] + '" loading="lazy"></span>';
     }).join('') + '</div>';
