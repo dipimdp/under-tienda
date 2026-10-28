@@ -1222,3 +1222,49 @@ window.undCuotas = function (monto) {
     requestAnimationFrame(function () { pendiente = false; asegurar(); });
   }).observe(document.documentElement, { childList: true, subtree: true });
 })();
+
+/* UNDER - Sello de reseñas de Google en todas las páginas, justo arriba del pie de página.
+   OJO: la nota y la cantidad se cargan a mano (Google no las entrega sin API). Leídos de la ficha de Google el 28/10/2026: 5,0 y 19 opiniones.
+   Para actualizar: cambiar NOTA y TOTAL. */
+(function () {
+  var NOTA = 5.0;
+  var TOTAL = 19;
+  var URL = 'https://share.google/o9QIaORLxTG39wtmZ';
+
+  var st = document.createElement('style');
+  st.textContent =
+    '.und-gr{border-top:1px solid #e8e8e8;background:#fff;padding:22px 16px;text-align:center}' +
+    '.und-gr a{display:inline-flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 12px;color:#111;text-decoration:none}' +
+    '.und-gr__e{font-size:22px;letter-spacing:2px;color:#f5b400;line-height:1}' +
+    '.und-gr__n{font:800 20px/1 Montserrat,sans-serif;color:#111}' +
+    '.und-gr__t{font:400 14px "Work Sans",sans-serif;color:#444}' +
+    '.und-gr__v{font:600 13px "Work Sans",sans-serif;color:#111;text-decoration:underline;text-underline-offset:3px}' +
+    '.und-gr a:hover .und-gr__v{color:#2e6044}' +
+    '@media(max-width:639px){.und-gr{padding:18px 12px}.und-gr__e{font-size:20px}.und-gr__t{font-size:13px}}';
+  document.head.appendChild(st);
+
+  function armar() {
+    if (document.querySelector('.und-gr')) return true;
+    var pie = document.querySelector('footer.footer') || document.querySelector('footer');
+    if (!pie) return false;
+    var llenas = Math.max(0, Math.min(5, Math.round(NOTA)));
+    var estrellas = '★★★★★'.slice(0, llenas) + '☆☆☆☆☆'.slice(0, 5 - llenas);
+    var nota = String(NOTA.toFixed(1)).replace('.', ',');
+    var d = document.createElement('div');
+    d.className = 'und-gr';
+    d.innerHTML =
+      '<a href="' + URL + '" target="_blank" rel="noopener" aria-label="Calificación ' + nota + ' de 5 en Google, ' + TOTAL + ' opiniones. Ver opiniones">' +
+      '<span class="und-gr__e" aria-hidden="true">' + estrellas + '</span>' +
+      '<span class="und-gr__n">' + nota + '</span>' +
+      '<span class="und-gr__t">' + TOTAL + ' opiniones en Google</span>' +
+      '<span class="und-gr__v">Ver opiniones &rarr;</span></a>';
+    pie.before(d);
+    return true;
+  }
+
+  var intentos = 0;
+  (function reintentar() {
+    try { if (armar() || ++intentos > 30) return; } catch (x) { return; }
+    setTimeout(reintentar, 300);
+  })();
+})();
