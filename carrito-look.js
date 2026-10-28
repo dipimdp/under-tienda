@@ -944,6 +944,9 @@
     '#und-pp .off{font-size:16px;font-weight:700;color:#2e6044}' +
     '#und-pp .s{margin-top:2px;font-size:13px;color:#444}#und-pp .s b{color:#2e6044}' +
     '#und-pp .c{margin-top:12px;padding-top:12px;border-top:1px solid #e8e8e8;font-size:13px;color:#444}#und-pp .c b{color:#111}' +
+    '#und-pp .pay{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}' +
+    '#und-pp .pay span{display:flex;align-items:center;justify-content:center;width:46px;height:30px;border:1px solid #e3e3e3;border-radius:6px;background:#fff}' +
+    '#und-pp .pay img{max-width:34px;max-height:20px;width:auto;height:auto}' +
     '#und-pp .box{margin-top:14px;padding:2px 16px;border:1px solid #e3e3e3;border-radius:14px}' +
     '#und-pp .row{display:flex;align-items:flex-start;gap:12px;padding:13px 0;border-bottom:1px solid #eee;font-size:13px;line-height:1.4;color:#555}' +
     '#und-pp .row:last-child{border-bottom:0}' +
@@ -954,6 +957,9 @@
 
   var ICO_LOCAL = '<svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
   var ICO_ENVIO = '<svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>';
+
+  // Logos de los medios de pago que muestra "Ver cuotas y descuentos" (Mercado Pago: tarjetas, Maestro, Pago Fácil, Rapipago).
+  var MEDIOS = [['visa', 'Visa'], ['mastercard', 'Mastercard'], ['maestro', 'Maestro'], ['cabal', 'Cabal'], ['pagofacil', 'Pago Fácil'], ['rapipago', 'Rapipago']];
 
   function num(s) { return +(String(s || '').replace(/[^\d,]/g, '').replace(',', '.')) || 0; }
   function money(n) { return '$' + Math.round(n).toLocaleString('es-AR'); }
@@ -990,6 +996,9 @@
         '<div class="s">por transferencia · ahorrás <b>' + money(lista - fin) + '</b></div>';
     }
     if (m) h += '<div class="c">' + m[1] + ' cuotas sin interés de <b>' + money(num(m[2])) + '</b></div>';
+    h += '<div class="pay">' + MEDIOS.map(function (x) {
+      return '<span><img src="https://dk0k1i3js6c49.cloudfront.net/applications/logos/payment-icons/' + x[0] + '.png" alt="' + x[1] + '" loading="lazy"></span>';
+    }).join('') + '</div>';
     h += '<div class="box"><div class="row">' + ICO_LOCAL + '<div><b>Retirá gratis en Mar del Plata</b><br>Rawson 1550 · listo 24 hs después del pago</div></div>';
     if (umbral) {
       h += '<div class="row">' + ICO_ENVIO + '<div>' + (lista >= umbral
