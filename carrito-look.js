@@ -1240,7 +1240,7 @@ window.undCuotas = function (monto) {
     '.und-zm__x{position:absolute;top:14px;right:14px;z-index:2;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:rgba(17,17,17,.08);color:#111;font-size:26px;line-height:1;cursor:pointer;transition:background .15s}' +
     '.und-zm__x:hover{background:rgba(17,17,17,.2)}' +
     '.und-zm__c{position:absolute;bottom:14px;left:50%;z-index:2;transform:translateX(-50%);padding:4px 12px;border-radius:99px;background:rgba(17,17,17,.08);font:600 12px "Work Sans",sans-serif;color:#111;pointer-events:none}' +
-    '@media(max-width:639px){.und-zm__s{height:auto;min-height:100vh}.und-zm__i{width:100vw;height:auto;max-height:100vh}}';
+    '@media(max-width:639px){.und-zm__s{height:auto;min-height:0;display:block}.und-zm__i{width:100vw;height:auto;max-height:none}.und-zm__s:first-child{padding-top:56px}}';
   document.head.appendChild(st);
 
   var caja = null, hojas = [], actual = 0;
