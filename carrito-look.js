@@ -1044,7 +1044,7 @@ window.undCuotas = function (monto) {
     h += '</div>';
     // Compra por WhatsApp en las Henley: evita el formulario del checkout (DNI y domicilio) cuando alguien prefiere coordinar por mensaje.
     if (/^\/remeras\/henley\//.test(location.pathname)) {
-      var tit = ((document.querySelector('h1') || {}).textContent || 'la remera Henley').replace(/\s+/g, ' ').trim();
+      var tit = ((document.querySelector('.product-vip__title') || {}).textContent || 'la remera Henley').replace(/\s+/g, ' ').trim();
       var msj = 'Hola! Quiero comprar la ' + tit + '. ¿Me confirmás talle disponible y cómo pago?';
       h += '<a class="wa" href="https://wa.me/5492233040391?text=' + encodeURIComponent(msj) + '" target="_blank" rel="noopener">' +
         '<svg viewBox="0 0 24 24"><path d="M4 3h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H9l-5 4V4a1 1 0 0 1 1-1z"/></svg>' +
