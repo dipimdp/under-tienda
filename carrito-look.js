@@ -1033,6 +1033,11 @@ window.undCuotas = function (monto) {
       h += '<div class="row">' + ICO_ENVIO + '<div>' + (lista >= umbral
         ? '<b>¡Tenés envío gratis!</b> a sucursal en este producto'
         : '<b>Envío gratis</b> a sucursal desde <b class="k">' + money(umbral) + '</b> · te faltan <b class="k">' + money(umbral - lista) + '</b>') + '</div></div>';
+      // Oferta de 2 Henley (campaña hasta el 10/11): dos unidades superan el umbral de envío gratis, que se mide sobre el precio de lista.
+      if (/^\/remeras\/henley\//.test(location.pathname) && lista < umbral && lista * 2 >= umbral) {
+        h += '<div class="row">' + ICO_ENVIO + '<div><b>Llevando 2 Henley</b> (pueden ser de distinto color) pagás <b class="k">' +
+          money((conTransf ? fin : lista) * 2) + '</b>' + (conTransf ? ' por transferencia' : '') + ' y el envío a sucursal es gratis</div></div>';
+      }
     }
     h += '</div>';
     el.innerHTML = h;
