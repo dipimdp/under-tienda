@@ -963,6 +963,7 @@ window.undCuotas = function (monto) {
   st.textContent =
     '#und-pp~.product-vip__price,#und-pp~.product-vip__show-payment-offers-discount,#und-pp~.product-vip__payment-offers-container{display:none!important}' +
     '#und-pp{margin:12px 0 18px;color:#111}' +
+    '.product-vip__fields .under-beneficios{display:none!important}' +
     '#und-pp .l{font-size:14px;color:#555}#und-pp .l b{margin-left:4px;color:#111}' +
     '#und-pp .bd{display:inline-block;margin-top:8px;padding:3px 9px;border-radius:3px;background:#2e6044;color:#fff;font-size:11px;font-weight:800;letter-spacing:.07em}' +
     '#und-pp .r{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 12px;margin-top:2px}' +
@@ -984,7 +985,8 @@ window.undCuotas = function (monto) {
   document.head.appendChild(st);
 
   var ICO_LOCAL = '<svg viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></svg>';
-  var ICO_ENVIO = '<svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>';
+  var ICO_TARJETA = '<svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>';
+  var ICO_ENVIO ='<svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>';
 
   // Logos de los medios de pago que muestra "Ver cuotas y descuentos" (Mercado Pago: tarjetas, Maestro, Pago Fácil, Rapipago).
   var MEDIOS = [['visa', 'Visa'], ['mastercard', 'Mastercard'], ['maestro', 'Maestro'], ['cabal', 'Cabal'], ['pagofacil', 'Pago Fácil'], ['rapipago', 'Rapipago']];
@@ -1023,14 +1025,14 @@ window.undCuotas = function (monto) {
         '<div class="r"><span class="big">' + money(fin) + '</span><span class="off">' + pct + '% OFF</span></div>' +
         '<div class="s">por transferencia · ahorrás <b>' + money(lista - fin) + '</b></div>';
     }
-    if (m) {
-      var cq = window.undCuotas(lista);
-      h += '<div class="c">' + cq.html + (cq.nota ? '<small>' + cq.nota + '</small>' : '') + '</div>';
-    }
     h += '<div class="pay">' + MEDIOS.map(function (x) {
       return '<span><img src="https://dk0k1i3js6c49.cloudfront.net/applications/logos/payment-icons/' + x[0] + '.png" alt="' + x[1] + '" loading="lazy"></span>';
     }).join('') + '</div>';
     h += '<div class="box"><div class="row">' + ICO_LOCAL + '<div><b>Retirá gratis en Mar del Plata</b><br>Rawson 1550 · listo 24 hs después del pago</div></div>';
+    if (m) {
+      var cq = window.undCuotas(lista);
+      h += '<div class="row">' + ICO_TARJETA + '<div>' + cq.html + (cq.nota ? '<br>' + cq.nota : '') + '</div></div>';
+    }
     if (umbral) {
       h += '<div class="row">' + ICO_ENVIO + '<div>' + (lista >= umbral
         ? '<b>¡Tenés envío gratis!</b> a sucursal en este producto'
