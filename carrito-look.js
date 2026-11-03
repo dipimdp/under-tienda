@@ -1000,7 +1000,10 @@ window.undCuotas = function (monto) {
     var precio = document.querySelector('.product-vip__price');
     var valor = document.querySelector('.product-vip__price-value');
     if (!precio || !valor) return;
-    var lista = num(valor.textContent);
+    // Con precio tachado el valor trae "<del>viejo</del> actual": hay que leer solo el actual.
+    var vc = valor.cloneNode(true);
+    [].forEach.call(vc.querySelectorAll('del,s'), function (d) { d.remove(); });
+    var lista = num(vc.textContent);
     var fin = num((document.querySelector('.final-price') || {}).textContent);
     if (!lista) return;
     var conTransf = fin > 0 && fin < lista;
