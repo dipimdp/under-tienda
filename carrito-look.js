@@ -1024,7 +1024,7 @@ window.undCuotas = function (monto) {
     var pct = conTransf ? Math.round((1 - fin / lista) * 100) : 0;
     var h = '<div class="l">Precio final <b>' + money(lista) + '</b></div>';
     if (conTransf) {
-      h += '<span class="bd">MEJOR PRECIO</span>' +
+      h += '<span class="bd">' + (window.undBF && window.undBF.activo() ? 'BLACK FRIDAY' : 'MEJOR PRECIO') + '</span>' +
         '<div class="r"><span class="big">' + money(fin) + '</span><span class="off">' + pct + '% OFF</span></div>' +
         '<div class="s">por transferencia · ahorrás <b>' + money(lista - fin) + '</b></div>';
     }
@@ -1040,11 +1040,6 @@ window.undCuotas = function (monto) {
       h += '<div class="row">' + ICO_ENVIO + '<div>' + (lista >= umbral
         ? '<b>¡Tenés envío gratis!</b> a sucursal en este producto'
         : '<b>Envío gratis</b> a sucursal desde <b class="k">' + money(umbral) + '</b> · te faltan <b class="k">' + money(umbral - lista) + '</b>') + '</div></div>';
-      // Oferta de 2 Henley (campaña hasta el 10/11): dos unidades superan el umbral de envío gratis, que se mide sobre el precio de lista.
-      if (/^\/remeras\/henley\//.test(location.pathname) && lista < umbral && lista * 2 >= umbral) {
-        h += '<div class="row">' + ICO_ENVIO + '<div><b>Llevando 2 Henley</b> (pueden ser de distinto color) pagás <b class="k">' +
-          money((conTransf ? fin : lista) * 2) + '</b>' + (conTransf ? ' por transferencia' : '') + ' y el envío a sucursal es gratis</div></div>';
-      }
     }
     h += '</div>';
     // Compra por WhatsApp en todas las fichas: evita el formulario del checkout (DNI y domicilio) cuando alguien prefiere coordinar por mensaje.
@@ -1417,4 +1412,63 @@ window.undCuotas = function (monto) {
     try { if (armar() || ++intentos > 30) return; } catch (x) { return; }
     setTimeout(reintentar, 300);
   })();
+})();
+
+/* UNDER - Black Friday / Cyber Monday 2026: del 23/11 al 30/11 (23:59 hs Argentina). Pasada la fecha, todo desaparece solo.
+   Para cambiar fechas o textos, editar solo las constantes de abajo. No inventa descuentos: usa el % de transferencia configurado en Empretienda. */
+window.undBF = (function () {
+  var INICIO = Date.UTC(2026, 10, 23, 3, 0, 0);          // 23/11 00:00 AR
+  var FIN = Date.UTC(2026, 10, 30, 26, 59, 59);          // 30/11 23:59:59 AR
+  var api = { activo: function () { var n = Date.now(); return n >= INICIO && n <= FIN; } };
+
+  var st = document.createElement('style');
+  st.textContent =
+    '.und-bf{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 10px;margin:0 0 14px;padding:12px 14px;border-radius:14px;background:#111;color:#fff}' +
+    '.und-bf__k{flex:0 0 100%;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#f5c542}' +
+    '.und-bf__m{flex:1;min-width:0;font-size:13px;line-height:1.3}.und-bf__m b{letter-spacing:.03em}' +
+    '.und-bf__c{display:flex;align-items:center;gap:3px;flex:0 0 auto}' +
+    '.und-bf__c i{min-width:30px;padding:6px 4px;border-radius:6px;background:#f5c542;color:#111;font:800 20px/1 Montserrat,sans-serif;font-style:normal;text-align:center}' +
+    '.und-bf__c i small{display:block;margin-top:2px;font:600 8px/1 "Work Sans",sans-serif;letter-spacing:.08em;text-transform:uppercase}' +
+    '.und-bf__c u{text-decoration:none;font-weight:800;color:#f5c542}' +
+    '.cart-sidenav__item.und-bf-li{display:block!important;list-style:none;padding:10px 0!important}.und-bf-li .und-bf{margin:0}' +
+    '@media(max-width:639px){.und-bf__c i{min-width:26px;font-size:17px}}';
+  document.head.appendChild(st);
+
+  function dos(n) { return (n < 10 ? '0' : '') + n; }
+
+  function pintar(el) {
+    var s = Math.max(0, Math.floor((FIN - Date.now()) / 1000));
+    var d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), seg = s % 60;
+    var txt = [d, h, m, seg].join(':');
+    if (el.dataset.v === txt) return;
+    el.dataset.v = txt;
+    el.querySelector('.und-bf__c').innerHTML = '<i>' + dos(d) + '<small>días</small></i><u>:</u><i>' + dos(h) + '<small>hs</small></i><u>:</u><i>' + dos(m) + '<small>min</small></i><u>:</u><i>' + dos(seg) + '<small>seg</small></i>';
+  }
+
+  function crear() {
+    var k = +window.transfer_discount || 0;
+    var el = document.createElement('div');
+    el.className = 'und-bf';
+    el.innerHTML = '<span class="und-bf__k">Black Friday · Cyber Monday</span><div class="und-bf__m">' +
+      (k ? '<b>' + k + '% OFF</b> pagando por transferencia + ' : '') + 'cuotas sin interés. <b>Termina el 30/11</b></div><div class="und-bf__c"></div>';
+    return el;
+  }
+
+  function asegurar() {
+    if (!api.activo()) { [].forEach.call(document.querySelectorAll('.und-bf,.und-bf-li'), function (e) { e.remove(); }); return; }
+    var pp = document.getElementById('und-pp');
+    if (pp && !(pp.previousElementSibling && pp.previousElementSibling.classList.contains('und-bf'))) pp.before(crear());
+    var env = document.querySelector('.cart-sidenav__content .und-env');
+    if (env && !document.querySelector('.cart-sidenav__content .und-bf')) {
+      var li = document.createElement('li');
+      li.className = 'cart-sidenav__item und-bf-li';
+      li.appendChild(crear());
+      env.after(li);
+    }
+    [].forEach.call(document.querySelectorAll('.und-bf'), pintar);
+  }
+
+  setInterval(asegurar, 1000);
+  new MutationObserver(function () { requestAnimationFrame(asegurar); }).observe(document.documentElement, { childList: true, subtree: true });
+  return api;
 })();
